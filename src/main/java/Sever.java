@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,10 +46,8 @@ public class Sever {
 
         @Override
         public void run() {
-            //输出客户端的dns请求数据
             InetAddress srcIp = request.getAddress();
             int sourcePort = request.getPort();
-            //分析dns数据包格式
             Message messageIn;
             try {
                 messageIn = new Message(request.getData());
