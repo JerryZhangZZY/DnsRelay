@@ -4,10 +4,10 @@ import java.util.*;
 public class Cache {
     private final String path = "cache.txt";
     private File cacheFile;
-    public static final Object cacheFileLock = new Object();
+    public final Object cacheFileLock = new Object();
 
     private Map<String, String[]> cache;
-    public static final Object cacheLock = new Object();
+    public final Object cacheLock = new Object();
 
     public Cache() {
         cacheFile = new File(path);
