@@ -143,7 +143,7 @@ public class Sever {
                 cache.addCacheToFile(domain, ips);
             }
 
-            System.out.println("answer ip: " + ansIp.toString());
+            System.out.println("answer ip: " + ansIp.toString().substring(1));
 
             Message messageOut = messageIn.clone();
             Record answer = new ARecord(question.getName(), question.getDClass(), 64, ansIp);
