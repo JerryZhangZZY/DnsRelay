@@ -43,8 +43,13 @@ public class Cache {
     }
 
     // TODO @zaitian
-    public void deleteCacheFromFile() {
+    public void deleteCacheFromFile(String timeStamp) {
 
+        // remember to use locks rigorously
+        // ...
+
+        // update cache finally
+        readCacheFromFile();
     }
 
     public Map<String, String[]> getCache() {
