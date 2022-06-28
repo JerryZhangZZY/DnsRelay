@@ -143,13 +143,20 @@ public class Sever {
             System.out.println("answer ip: " + ansIp.toString().substring(1));
 
             Message messageOut = messageIn.clone();
-            Record answer = new ARecord(question.getName(), question.getDClass(), 64, ansIp);
 
-            // TODO ipv6 @zaitian
+            if (ansIp.toString().substring(1).equals("0.0.0.0")) {
+                System.out.println("shit");
+                messageOut.getHeader().setRcode(3);
+            }
+            else {
+                Record answer = new ARecord(question.getName(), question.getDClass(), 64, ansIp);
+
+                // TODO ipv6 @zaitian
 //            new AAAARecord()
 
-            messageOut.addRecord(answer, Section.ANSWER);
-            //发送消息给客户端
+                messageOut.addRecord(answer, Section.ANSWER);
+            }
+
             byte[] buf = messageOut.toWire();
             DatagramPacket response = new DatagramPacket(buf, buf.length, srcIp, sourcePort);
             try {
