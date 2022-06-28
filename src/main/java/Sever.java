@@ -140,10 +140,10 @@ public class Sever {
                     return;
                 System.out.println("ipv4: " + ips.size() + " result");
                 ansIp = ips.get(new Random().nextInt(ips.size()));
+                cache.addCacheToFile(domain, ips);
             }
 
             System.out.println("answer ip: " + ansIp.toString());
-
 
             Message messageOut = messageIn.clone();
             Record answer = new ARecord(question.getName(), question.getDClass(), 64, ansIp);

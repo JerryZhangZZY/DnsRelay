@@ -1,4 +1,6 @@
 import java.io.*;
+import java.net.InetAddress;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Cache {
@@ -14,7 +16,7 @@ public class Cache {
         cache = new HashMap<>();
         if (!cacheFile.exists()) {
             try {
-                FileOutputStream fos = new FileOutputStream(cacheFile);
+                new FileOutputStream(cacheFile);
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -25,21 +27,47 @@ public class Cache {
     }
 
     public void readCacheFromFile() {
-        synchronized (cacheFile) {
+        synchronized (cacheFileLock) {
             try {
                 BufferedReader br = new BufferedReader(new FileReader(cacheFile));
                 String line = null;
                 while ((line = br.readLine()) != null) {
                     String[] contents = line.split(" ");
                     String[] ips = Arrays.copyOfRange(contents, 2, contents.length);
-                    synchronized (cache) {
+                    synchronized (cacheLock) {
                         cache.put(contents[1], ips);
                     }
                 }
+                br.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    public void addCacheToFile(String domain, ArrayList<InetAddress> ips) {
+        synchronized (cacheFileLock) {
+            BufferedWriter bw = null;
+            try {
+                bw = new BufferedWriter(new FileWriter(cacheFile, true));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            Date date = new Date();
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd");
+            String line = formatter.format(date) + " " + domain;
+            for (InetAddress ip : ips) {
+                line += (" " + ip.toString().substring(1));
+            }
+            try {
+                bw.write(line);
+                bw.newLine();
+                bw.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        readCacheFromFile();
     }
 
     // TODO @zaitian
@@ -57,7 +85,7 @@ public class Cache {
     }
 
     public void setCache(Map<String, String[]> cache) {
-        synchronized (cache) {
+        synchronized (cacheLock) {
             this.cache = cache;
         }
     }
