@@ -21,7 +21,7 @@ public class Sever {
         }
         byte[] buf = new byte[1024];
         DatagramPacket request = new DatagramPacket(buf, buf.length);
-        ExecutorService pool = Executors.newFixedThreadPool(1);
+        ExecutorService pool = Executors.newFixedThreadPool(20);
 
         while (true) {
             try {
@@ -91,7 +91,7 @@ public class Sever {
                 byte[] relayBuf = messageIn.toWire();
                 InetAddress dnsSeverIp;
                 try {
-                    dnsSeverIp = InetAddress.getByName("10.0.0.1");
+                    dnsSeverIp = InetAddress.getByName("8.8.8.8");
                 } catch (UnknownHostException e) {
                     throw new RuntimeException(e);
                 }
@@ -130,8 +130,17 @@ public class Sever {
                             throw new RuntimeException(e);
                         }
                     }
-                    // TODO ipv6 @zaitian
-                    // ...
+                    else if (record instanceof AAAARecord) {
+                        // TODO ipv6 @zaitian
+                        // ...
+                        AAAARecord aaaaRecord = (AAAARecord)record;
+                        try {
+                            InetAddress ip = InetAddress.getByAddress(aaaaRecord.getAddress().getAddress());
+                            ips.add(ip);
+                        } catch (UnknownHostException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
                 }
                 if (ips.size() == 0)
                     return;
@@ -149,11 +158,14 @@ public class Sever {
                 messageOut.getHeader().setRcode(3);
             }
             else {
-                Record answer = new ARecord(question.getName(), question.getDClass(), 64, ansIp);
-
+                Record answer;
+                if (ansIp instanceof Inet4Address) {
+                    answer = new ARecord(question.getName(), question.getDClass(), 64, ansIp);
+                }
                 // TODO ipv6 @zaitian
-//            new AAAARecord()
-
+                else {
+                    answer = new AAAARecord(question.getName(), question.getDClass(), 64, ansIp);
+                }
                 messageOut.addRecord(answer, Section.ANSWER);
             }
 
