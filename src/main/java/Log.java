@@ -34,5 +34,6 @@ public class Log {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        buf = "";
     }
 }
