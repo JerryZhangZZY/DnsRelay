@@ -24,4 +24,4 @@ hs_err_pid*
 /.idea/
 
 # Cache file
-*.txt
+log.txt
