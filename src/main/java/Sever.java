@@ -16,6 +16,7 @@ public class Sever {
 
     public static void main(String[] args) {
         Cache cache = new Cache();
+        Log log = new Log();
         DatagramSocket socket;
         try {
             socket = new DatagramSocket(53);
@@ -31,7 +32,7 @@ public class Sever {
                 Executors.newScheduledThreadPool(1);
         executorService.scheduleAtFixedRate(() -> {
             cache.flushCacheFile();
-            System.out.println("[" + Thread.currentThread().getName() + "] " + "DNS cache flushed");
+            log.addLog("[" + Thread.currentThread().getName() + "] " + "DNS cache flushed");
         }, 0, 2, TimeUnit.DAYS);
 
         while (true) {
@@ -40,7 +41,7 @@ public class Sever {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            pool.execute(new Service(request, socket, cache));
+            pool.execute(new Service(request, socket, cache, new Log()));
         }
     }
 
@@ -48,11 +49,13 @@ public class Sever {
         DatagramPacket request;
         DatagramSocket socket;
         Cache cache;
+        Log log;
 
-        public Service(DatagramPacket request, DatagramSocket socket, Cache cache) {
+        public Service(DatagramPacket request, DatagramSocket socket, Cache cache, Log log) {
             this.request = request;
             this.socket = socket;
             this.cache = cache;
+            this.log = log;
         }
 
         @Override
@@ -76,16 +79,16 @@ public class Sever {
                 // inverse dns
                 case 12 -> {
                     valid = false;
-                    System.out.println("[" + Thread.currentThread().getName() + "] " + "inverse dns");
+                    log.addLog("[" + Thread.currentThread().getName() + "] " + "inverse dns");
                 }
                 // ipv4 question
                 case 1 -> {
-                    System.out.println("[" + Thread.currentThread().getName() + "] " + "ipv4 question for domain: " + domain);
+                    log.addLog("[" + Thread.currentThread().getName() + "] " + "ipv4 question for domain: " + domain);
                 }
                 // ipv6 question
                 case 28 -> {
                     useV6 = true;
-                    System.out.println("[" + Thread.currentThread().getName() + "] " + "ipv6 question for domain: " + domain);
+                    log.addLog("[" + Thread.currentThread().getName() + "] " + "ipv6 question for domain: " + domain);
                 }
             }
 
@@ -94,10 +97,10 @@ public class Sever {
             if (valid) {
                 ansIp = cache.getIpFromCache(domain + (useV6 ? "-v6" : ""));
                 if (ansIp != null) {
-                    System.out.println("[" + Thread.currentThread().getName() + "] " + "found in cache");
+                    log.addLog("[" + Thread.currentThread().getName() + "] " + "found in cache");
                 }
                 else {
-                    System.out.println("[" + Thread.currentThread().getName() + "] " + "not in cache");
+                    log.addLog("[" + Thread.currentThread().getName() + "] " + "not in cache");
                     DatagramSocket relaySocket;
                     try {
                         relaySocket = new DatagramSocket();
@@ -107,7 +110,7 @@ public class Sever {
                     byte[] relayBuf = messageIn.toWire();
                     InetAddress dnsSeverIp;
                     try {
-                        dnsSeverIp = InetAddress.getByName("10.0.0.1");
+                        dnsSeverIp = InetAddress.getByName("114.114.114.114");
                     } catch (UnknownHostException e) {
                         throw new RuntimeException(e);
                     }
@@ -160,11 +163,11 @@ public class Sever {
                         }
                     }
                     if (ips.size() == 0) {
-                        System.out.println("[" + Thread.currentThread().getName() + "] " + "no ipv" + (useV6 ? 6 : 4) + " result found from remote dns");
+                        log.addLog("[" + Thread.currentThread().getName() + "] " + "no ipv" + (useV6 ? 6 : 4) + " result found from remote dns");
                         valid = false;
                     }
                     else {
-                        System.out.println("[" + Thread.currentThread().getName() + "] " + "in total " + ips.size() + " result(s)");
+                        log.addLog("[" + Thread.currentThread().getName() + "] " + "in total " + ips.size() + " result(s)");
                         ansIp = ips.get(new Random().nextInt(ips.size()));
 
                         // TODO conf
@@ -179,7 +182,7 @@ public class Sever {
                 messageOut.getHeader().setRcode(3);
             }
             else {
-                System.out.println("[" + Thread.currentThread().getName() + "] " + "answer ip: " + ansIp.toString().substring(1));
+                log.addLog("[" + Thread.currentThread().getName() + "] " + "answer ip: " + ansIp.toString().substring(1));
                 Record answer;
                 // ipv4 answer
                 if (!useV6) {
@@ -198,6 +201,7 @@ public class Sever {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            log.writeLog();
         }
     }
 }

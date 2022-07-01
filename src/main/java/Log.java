@@ -23,7 +23,7 @@ public class Log {
     synchronized public void writeLog() {
         Date date = new Date();
         SimpleDateFormat formatter = new SimpleDateFormat("yy/MM/dd HH:mm:ss");
-        String logItem = "[" + formatter.format(date) + "]" + buf + "\n";
+        String logItem = "[" + formatter.format(date) + "]\n" + buf + "\n";
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter(log, true));
             bw.write(logItem);
