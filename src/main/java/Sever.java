@@ -117,26 +117,29 @@ public class Sever {
                     throw new RuntimeException(e);
                 }
 
-                // TODO @zaitian records contains both ARecord(ipv4) and AAAARecord(ipv6)
+                //records contain both ARecord(ipv4) and AAAARecord(ipv6)
                 List<Record> records = messageResponse.getSection(Section.ANSWER);
                 ArrayList<InetAddress> ips = new ArrayList<>();
+                int[] ipCount = {0, 0};
                 for (Record record : records) {
                     if (record instanceof ARecord) {
+                        //ipv4
                         ARecord aRecord = (ARecord)record;
                         try {
                             InetAddress ip = InetAddress.getByAddress(aRecord.getAddress().getAddress());
                             ips.add(ip);
+                            ipCount[0]++;
                         } catch (UnknownHostException e) {
                             throw new RuntimeException(e);
                         }
                     }
                     else if (record instanceof AAAARecord) {
-                        // TODO ipv6 @zaitian
-                        // ...
+                        //ipv6
                         AAAARecord aaaaRecord = (AAAARecord)record;
                         try {
                             InetAddress ip = InetAddress.getByAddress(aaaaRecord.getAddress().getAddress());
                             ips.add(ip);
+                            ipCount[1]++;
                         } catch (UnknownHostException e) {
                             throw new RuntimeException(e);
                         }
@@ -144,7 +147,9 @@ public class Sever {
                 }
                 if (ips.size() == 0)
                     return;
-                System.out.println("ipv4: " + ips.size() + " result");
+                System.out.println("in total " + ips.size() + " result(s)");
+                System.out.println("ipv4: " + ipCount[0] + " result(s)");
+                System.out.println("ipv6: " + ipCount[1] + " result(s)");
                 ansIp = ips.get(new Random().nextInt(ips.size()));
                 cache.addCacheToFile(domain, ips);
             }
@@ -153,17 +158,16 @@ public class Sever {
 
             Message messageOut = messageIn.clone();
 
-            if (ansIp.toString().substring(1).equals("0.0.0.0")) {
+            if (ansIp.toString().substring(1).equals("0.0.0.0") || ansIp.toString().substring(1).equals("::")) {
                 System.out.println("shit");
                 messageOut.getHeader().setRcode(3);
             }
             else {
-                Record answer;
-                if (ansIp instanceof Inet4Address) {
+                Record answer = null;
+                if (ansIp instanceof Inet4Address) {            //ipv4
                     answer = new ARecord(question.getName(), question.getDClass(), 64, ansIp);
                 }
-                // TODO ipv6 @zaitian
-                else {
+                else if (ansIp instanceof Inet6Address){        //ipv6
                     answer = new AAAARecord(question.getName(), question.getDClass(), 64, ansIp);
                 }
                 messageOut.addRecord(answer, Section.ANSWER);
