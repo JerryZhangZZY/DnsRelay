@@ -50,7 +50,7 @@ public class Cache {
         synchronized (cacheFileLock) {
             BufferedWriter bw = null;
             try {
-                bw = new BufferedWriter(new FileWriter(cacheFile));
+                bw = new BufferedWriter(new FileWriter(cacheFile, true));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
