@@ -1,5 +1,6 @@
 import org.xbill.DNS.*;
 import org.xbill.DNS.Record;
+import org.xbill.DNS.dnssec.R;
 
 import java.io.IOException;
 import java.net.*;
@@ -174,7 +175,7 @@ public class Sever {
             }
 
             Message messageOut = messageIn.clone();
-            if (!valid) {
+            if (!valid || ansIp.toString().substring(1).equals("0.0.0.0") || ansIp.toString().substring(1).equals("::")) {
                 messageOut.getHeader().setRcode(3);
             }
             else {
