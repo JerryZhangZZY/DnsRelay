@@ -178,7 +178,9 @@ public class Sever {
             }
 
             Message messageOut = messageIn.clone();
-            if (!valid || ansIp.toString().substring(1).equals("0.0.0.0") || ansIp.toString().substring(1).equals("::")) {
+            if (!valid || ansIp.toString().substring(1).equals("0.0.0.0")
+                    || ansIp.toString().substring(1).equals("::")
+                    || ansIp.toString().substring(1).equals("0:0:0:0:0:0:0:0")) {
                 messageOut.getHeader().setRcode(3);
             }
             else {

@@ -98,9 +98,14 @@ public class Cache {
                 String line;
                 while ((line = br.readLine()) != null) {
                     String[] contents = line.split(" ");
-                    Date cacheDate  = dateFormat.parse(contents[0]);
-                    if (cacheDate.after(expireDate)) {
+                    if (contents[0].equals("blacklist")) {
                         newCache = newCache + line + "\n";
+                    }
+                    else {
+                        Date cacheDate = dateFormat.parse(contents[0]);
+                        if (cacheDate.after(expireDate)) {
+                            newCache = newCache + line + "\n";
+                        }
                     }
                 }
                 br.close();
