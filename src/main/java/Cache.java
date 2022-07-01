@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.InetAddress;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -49,7 +50,7 @@ public class Cache {
         synchronized (cacheFileLock) {
             BufferedWriter bw = null;
             try {
-                bw = new BufferedWriter(new FileWriter(cacheFile, true));
+                bw = new BufferedWriter(new FileWriter(cacheFile));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -70,12 +71,38 @@ public class Cache {
         readCacheFromFile();
     }
 
-    // TODO @zaitian
-    public void deleteCacheFromFile(String timeStamp) {
-
+    public void flushCacheFile() {
+        SimpleDateFormat dateFormat=new SimpleDateFormat("yyyy/MM/dd");
+        Calendar calendar=Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY,-48);
+        Date expireDate = calendar.getTime();
+        String newCache = "";
         // remember to use locks rigorously
-        // ...
-
+        synchronized (cacheFileLock) {
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(cacheFile));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] contents = line.split(" ");
+                    Date cacheDate  = dateFormat.parse(contents[0]);
+                    if (cacheDate.after(expireDate)) {
+                        newCache = newCache + line + "\n";
+                    }
+                }
+                br.close();
+            } catch (IOException | ParseException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        synchronized (cacheFileLock) {
+            try {
+                BufferedWriter bw = new BufferedWriter(new FileWriter(cacheFile, false));
+                bw.write(newCache);
+                bw.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         // update cache finally
         readCacheFromFile();
     }
@@ -89,5 +116,4 @@ public class Cache {
             this.cache = cache;
         }
     }
-
 }
