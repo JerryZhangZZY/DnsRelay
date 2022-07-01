@@ -4,10 +4,13 @@ import org.xbill.DNS.Record;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Sever {
 
@@ -21,7 +24,15 @@ public class Sever {
         }
         byte[] buf = new byte[1024];
         DatagramPacket request = new DatagramPacket(buf, buf.length);
+        //dns threads
         ExecutorService pool = Executors.newFixedThreadPool(20);
+        //cache thread
+        ScheduledExecutorService executorService =
+                Executors.newScheduledThreadPool(1);
+        executorService.scheduleAtFixedRate(() -> {
+            cache.flushCacheFile();
+            System.out.println("DNS cache flushed");
+        }, 0, 2, TimeUnit.DAYS);
 
         while (true) {
             try {
