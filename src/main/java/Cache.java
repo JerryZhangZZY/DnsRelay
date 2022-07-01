@@ -9,13 +9,13 @@ public class Cache {
     private final String path = "cache.txt";
     private File cacheFile;
     public final Object cacheFileLock = new Object();
-
     private Map<String, String[]> cache;
     public final Object cacheLock = new Object();
-
-    public Cache() {
+    private boolean useBlacklist;
+    public Cache(boolean useBlacklist) {
         cacheFile = new File(path);
         cache = new HashMap<>();
+        this.useBlacklist = useBlacklist;
         if (!cacheFile.exists()) {
             try {
                 new FileOutputStream(cacheFile);
@@ -32,7 +32,12 @@ public class Cache {
         synchronized (cacheLock) {
             if (cache.containsKey(domain)) {
                 try {
-                    return InetAddress.getByName(cache.get(domain)[new Random().nextInt(cache.get(domain).length)]);
+                    InetAddress address = InetAddress.getByName(cache.get(domain)[new Random().nextInt(cache.get(domain).length)]);
+                    if (!useBlacklist && (address.toString().substring(1).equals("0.0.0.0")
+                            || address.toString().substring(1).equals("::")
+                            || address.toString().substring(1).equals("0:0:0:0:0:0:0:0")))
+                        address = null;
+                    return address;
                 } catch (UnknownHostException e) {
                     throw new RuntimeException(e);
                 }

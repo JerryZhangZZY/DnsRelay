@@ -1,9 +1,12 @@
 import org.xbill.DNS.*;
 import org.xbill.DNS.Record;
+
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,7 +16,25 @@ import java.util.concurrent.TimeUnit;
 public class Sever {
 
     public static void main(String[] args) {
-        Cache cache = new Cache();
+        Properties config = new Properties();
+        boolean useCache = true;
+        int cacheLimitInDays = 2;
+        boolean useBlacklist = true;
+        int threadPoolSize = 10;
+        String remoteDnsServer = "114.114.114.114";
+        try {
+            FileInputStream in = new FileInputStream("boot.properties");
+            config.load(in);
+            in.close();
+            useCache = Boolean.parseBoolean(config.getProperty("use-cache", "true"));
+            cacheLimitInDays = Integer.parseInt(config.getProperty("cache-limit-in-days", "2"));
+            useBlacklist = Boolean.parseBoolean(config.getProperty("use-blacklist", "true"));
+            threadPoolSize = Integer.parseInt(config.getProperty("thread-pool-size", "10"));
+            remoteDnsServer = config.getProperty("remote-dns-server", "114.114.114.114");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Cache cache = new Cache(useBlacklist);
         Log log = new Log();
         DatagramSocket socket;
         try {
@@ -23,15 +44,23 @@ public class Sever {
         }
         byte[] buf = new byte[1024];
         DatagramPacket request = new DatagramPacket(buf, buf.length);
+        log.addLog("[in main on start]");
+        log.addLog("\tuse-cache: "+ useCache);
+        log.addLog("\tcache-limit-in-days: "+ cacheLimitInDays);
+        log.addLog("\tuse-blacklist: "+ useBlacklist);
+        log.addLog("\tthread-pool-size: "+ threadPoolSize);
+        log.addLog("\tremote-dns-server: "+ remoteDnsServer);
+        log.writeLog();
         //dns threads
-        ExecutorService pool = Executors.newFixedThreadPool(20);
-        //cache thread
+        ExecutorService pool = Executors.newFixedThreadPool(threadPoolSize);
+        //flush cache thread
         ScheduledExecutorService executorService =
                 Executors.newScheduledThreadPool(1);
         executorService.scheduleAtFixedRate(() -> {
             cache.flushCacheFile();
-            log.addLog("[" + Thread.currentThread().getName() + "] " + "DNS cache flushed");
-        }, 0, 2, TimeUnit.DAYS);
+            log.addLog("[in main on start] DNS cache flushed");
+            log.writeLog();
+        }, 0, cacheLimitInDays, TimeUnit.DAYS);
 
         while (true) {
             try {
@@ -39,7 +68,7 @@ public class Sever {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            pool.execute(new Service(request, socket, cache, new Log()));
+            pool.execute(new Service(request, socket, cache, new Log(), remoteDnsServer, useCache));
         }
     }
 
@@ -48,12 +77,17 @@ public class Sever {
         DatagramSocket socket;
         Cache cache;
         Log log;
-
-        public Service(DatagramPacket request, DatagramSocket socket, Cache cache, Log log) {
+        String remoteDnsServer;
+        boolean useCache;
+        public Service(DatagramPacket request, DatagramSocket socket,
+                       Cache cache, Log log, String remoteDnsServer, boolean useCache) {
             this.request = request;
             this.socket = socket;
-            this.cache = cache;
             this.log = log;
+            this.remoteDnsServer = remoteDnsServer;
+            this.useCache = useCache;
+            if (useCache)
+                this.cache = cache;
         }
 
         @Override
@@ -93,12 +127,14 @@ public class Sever {
             InetAddress ansIp = null;
 
             if (valid) {
-                ansIp = cache.getIpFromCache(domain + (useV6 ? "-v6" : ""));
+                if (useCache)
+                    ansIp = cache.getIpFromCache(domain + (useV6 ? "-v6" : ""));
                 if (ansIp != null) {
                     log.addLog("[" + Thread.currentThread().getName() + "] " + "found in cache");
                 }
                 else {
-                    log.addLog("[" + Thread.currentThread().getName() + "] " + "not in cache");
+                    if (useCache)
+                        log.addLog("[" + Thread.currentThread().getName() + "] " + "not in cache");
                     DatagramSocket relaySocket;
                     try {
                         relaySocket = new DatagramSocket();
@@ -108,7 +144,7 @@ public class Sever {
                     byte[] relayBuf = messageIn.toWire();
                     InetAddress dnsSeverIp;
                     try {
-                        dnsSeverIp = InetAddress.getByName("114.114.114.114");
+                        dnsSeverIp = InetAddress.getByName(remoteDnsServer);
                     } catch (UnknownHostException e) {
                         throw new RuntimeException(e);
                     }
@@ -167,10 +203,9 @@ public class Sever {
                     else {
                         log.addLog("[" + Thread.currentThread().getName() + "] " + "in total " + ips.size() + " result(s)");
                         ansIp = ips.get(new Random().nextInt(ips.size()));
-
-                        // TODO conf
-                        if (cache.getIpFromCache(domain + (useV6 ? "-v6" : "")) == null)
-                            cache.addCacheToFile(domain + (useV6 ? "-v6" : ""), ips);
+                        if (useCache)
+                            if (cache.getIpFromCache(domain + (useV6 ? "-v6" : "")) == null)
+                                cache.addCacheToFile(domain + (useV6 ? "-v6" : ""), ips);
                     }
                 }
             }
