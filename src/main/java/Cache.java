@@ -93,8 +93,6 @@ public class Cache {
             } catch (IOException | ParseException e) {
                 throw new RuntimeException(e);
             }
-        }
-        synchronized (cacheFileLock) {
             try {
                 BufferedWriter bw = new BufferedWriter(new FileWriter(cacheFile, false));
                 bw.write(newCache);
@@ -108,7 +106,7 @@ public class Cache {
     }
 
     public Map<String, String[]> getCache() {
-        synchronized (cache) { return cache; }
+        synchronized (cacheLock) { return cache; }
     }
 
     public void setCache(Map<String, String[]> cache) {
