@@ -10,7 +10,3 @@ blacklist www.bbc.com. 0.0.0.0
 blacklist www.bbc.com.-v6 ::
 blacklist edition.cnn.com 0.0.0.0
 blacklist edition.cnn.com-v6 ::
-2022/07/02 self.events.data.microsoft.com. 20.189.173.1
-2022/07/02 self.events.data.microsoft.com. 20.189.173.1
-2022/07/02 optimizationguide-pa.googleapis.com. 142.251.42.234
-2022/07/02 baidu.com. 220.181.38.251 220.181.38.148

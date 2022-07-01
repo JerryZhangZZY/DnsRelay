@@ -15,42 +15,49 @@ import java.util.concurrent.TimeUnit;
 
 public class Sever {
 
+    static boolean useCache = true;
+    static int cacheLimitInDays = 2;
+    static int threadPoolSize = 10;
+    static String remoteDnsServer = "114.114.114.114";
+
     public static void main(String[] args) {
+        // start logging
+        Log log = new Log();
+        log.addLog("starting dns-relay server...");
+
+        // load config
         Properties config = new Properties();
-        boolean useCache = true;
-        int cacheLimitInDays = 2;
-        boolean useBlacklist = true;
-        int threadPoolSize = 10;
-        String remoteDnsServer = "114.114.114.114";
         try {
             FileInputStream in = new FileInputStream("boot.properties");
             config.load(in);
             in.close();
             useCache = Boolean.parseBoolean(config.getProperty("use-cache", "true"));
             cacheLimitInDays = Integer.parseInt(config.getProperty("cache-limit-in-days", "2"));
-            useBlacklist = Boolean.parseBoolean(config.getProperty("use-blacklist", "true"));
             threadPoolSize = Integer.parseInt(config.getProperty("thread-pool-size", "10"));
             remoteDnsServer = config.getProperty("remote-dns-server", "114.114.114.114");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.addLog("config loaded");
+        } catch (IOException ignored) {
+            log.addLog("config load failed, use default settings");
         }
-        Cache cache = new Cache(useBlacklist);
-        Log log = new Log();
+
+        byte[] buf = new byte[1024];
+        DatagramPacket request = new DatagramPacket(buf, buf.length);
+        log.addLog("\tuse-cache: " + useCache);
+        log.addLog("\tcache-limit-in-days: " + cacheLimitInDays);
+        log.addLog("\tthread-pool-size: " + threadPoolSize);
+        log.addLog("\tremote-dns-server: " + remoteDnsServer);
+        log.writeLog();
+
+        Cache cache = new Cache();
+
         DatagramSocket socket;
         try {
             socket = new DatagramSocket(53);
         } catch (SocketException e) {
             throw new RuntimeException(e);
         }
-        byte[] buf = new byte[1024];
-        DatagramPacket request = new DatagramPacket(buf, buf.length);
-        log.addLog("[in main on start]");
-        log.addLog("\tuse-cache: "+ useCache);
-        log.addLog("\tcache-limit-in-days: "+ cacheLimitInDays);
-        log.addLog("\tuse-blacklist: "+ useBlacklist);
-        log.addLog("\tthread-pool-size: "+ threadPoolSize);
-        log.addLog("\tremote-dns-server: "+ remoteDnsServer);
-        log.writeLog();
+        log.addLog("socket connected");
+
         //dns threads
         ExecutorService pool = Executors.newFixedThreadPool(threadPoolSize);
         //flush cache thread
@@ -58,10 +65,17 @@ public class Sever {
                 Executors.newScheduledThreadPool(1);
         executorService.scheduleAtFixedRate(() -> {
             cache.flushCacheFile();
-            log.addLog("[in main on start] DNS cache flushed");
+            log.addLog("dns cache flushed and loaded");
             log.writeLog();
         }, 0, cacheLimitInDays, TimeUnit.DAYS);
 
+        // wait for cache loaded
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        log.addLog("server started");
         while (true) {
             try {
                 socket.receive(request);
@@ -79,6 +93,7 @@ public class Sever {
         Log log;
         String remoteDnsServer;
         boolean useCache;
+
         public Service(DatagramPacket request, DatagramSocket socket,
                        Cache cache, Log log, String remoteDnsServer, boolean useCache) {
             this.request = request;
@@ -131,8 +146,7 @@ public class Sever {
                     ansIp = cache.getIpFromCache(domain + (useV6 ? "-v6" : ""));
                 if (ansIp != null) {
                     log.addLog("[" + Thread.currentThread().getName() + "] " + "found in cache");
-                }
-                else {
+                } else {
                     if (useCache)
                         log.addLog("[" + Thread.currentThread().getName() + "] " + "not in cache");
                     DatagramSocket relaySocket;
@@ -175,7 +189,7 @@ public class Sever {
                     for (Record record : records) {
                         if (!useV6 && record instanceof ARecord) {
                             // ipv4 records
-                            ARecord aRecord = (ARecord)record;
+                            ARecord aRecord = (ARecord) record;
                             try {
                                 InetAddress ip = InetAddress.getByAddress(aRecord.getAddress().getAddress());
                                 ips.add(ip);
@@ -183,10 +197,9 @@ public class Sever {
                             } catch (UnknownHostException e) {
                                 throw new RuntimeException(e);
                             }
-                        }
-                        else if (useV6 && record instanceof AAAARecord) {
+                        } else if (useV6 && record instanceof AAAARecord) {
                             // ipv6 records
-                            AAAARecord aaaaRecord = (AAAARecord)record;
+                            AAAARecord aaaaRecord = (AAAARecord) record;
                             try {
                                 InetAddress ip = InetAddress.getByAddress(aaaaRecord.getAddress().getAddress());
                                 ips.add(ip);
@@ -199,13 +212,14 @@ public class Sever {
                     if (ips.size() == 0) {
                         log.addLog("[" + Thread.currentThread().getName() + "] " + "no ipv" + (useV6 ? 6 : 4) + " result found from remote dns");
                         valid = false;
-                    }
-                    else {
+                    } else {
                         log.addLog("[" + Thread.currentThread().getName() + "] " + "in total " + ips.size() + " result(s)");
                         ansIp = ips.get(new Random().nextInt(ips.size()));
                         if (useCache)
-                            if (cache.getIpFromCache(domain + (useV6 ? "-v6" : "")) == null)
+                            if (cache.getIpFromCache(domain + (useV6 ? "-v6" : "")) == null) {
                                 cache.addCacheToFile(domain + (useV6 ? "-v6" : ""), ips);
+                                log.addLog("[" + Thread.currentThread().getName() + "] " + "added to cache file and reloaded cache");
+                            }
                     }
                 }
             }
@@ -215,19 +229,17 @@ public class Sever {
                     || ansIp.toString().substring(1).equals("::")
                     || ansIp.toString().substring(1).equals("0:0:0:0:0:0:0:0")) {
                 messageOut.getHeader().setRcode(3);
-            }
-            else {
-                log.addLog("[" + Thread.currentThread().getName() + "] " + "answer ip: " + ansIp.toString().substring(1));
+                log.addLog("[" + Thread.currentThread().getName() + "] " + "answer: non-existent domain");
+            } else {
                 Record answer;
                 // ipv4 answer
-                if (!useV6) {
+                if (!useV6)
                     answer = new ARecord(question.getName(), question.getDClass(), 64, ansIp);
-                }
-                // ipv6 answer
-                else {
+                    // ipv6 answer
+                else
                     answer = new AAAARecord(question.getName(), question.getDClass(), 64, ansIp);
-                }
                 messageOut.addRecord(answer, Section.ANSWER);
+                log.addLog("[" + Thread.currentThread().getName() + "] " + "answer ip: " + ansIp.toString().substring(1));
             }
             byte[] buf = messageOut.toWire();
             DatagramPacket response = new DatagramPacket(buf, buf.length, srcIp, sourcePort);

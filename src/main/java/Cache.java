@@ -7,15 +7,14 @@ import java.util.*;
 
 public class Cache {
     private final String path = "cache.txt";
-    private File cacheFile;
+    private final File cacheFile;
     public final Object cacheFileLock = new Object();
     private Map<String, String[]> cache;
     public final Object cacheLock = new Object();
-    private boolean useBlacklist;
-    public Cache(boolean useBlacklist) {
+
+    public Cache() {
         cacheFile = new File(path);
         cache = new HashMap<>();
-        this.useBlacklist = useBlacklist;
         if (!cacheFile.exists()) {
             try {
                 new FileOutputStream(cacheFile);
@@ -23,21 +22,13 @@ public class Cache {
                 throw new RuntimeException(e);
             }
         }
-        else {
-            readCacheFromFile();
-        }
     }
 
     public InetAddress getIpFromCache(String domain){
         synchronized (cacheLock) {
             if (cache.containsKey(domain)) {
                 try {
-                    InetAddress address = InetAddress.getByName(cache.get(domain)[new Random().nextInt(cache.get(domain).length)]);
-                    if (!useBlacklist && (address.toString().substring(1).equals("0.0.0.0")
-                            || address.toString().substring(1).equals("::")
-                            || address.toString().substring(1).equals("0:0:0:0:0:0:0:0")))
-                        address = null;
-                    return address;
+                    return InetAddress.getByName(cache.get(domain)[new Random().nextInt(cache.get(domain).length)]);
                 } catch (UnknownHostException e) {
                     throw new RuntimeException(e);
                 }
@@ -50,7 +41,7 @@ public class Cache {
         synchronized (cacheFileLock) {
             try {
                 BufferedReader br = new BufferedReader(new FileReader(cacheFile));
-                String line = null;
+                String line;
                 while ((line = br.readLine()) != null) {
                     String[] contents = line.split(" ");
                     String[] ips = Arrays.copyOfRange(contents, 2, contents.length);
@@ -91,12 +82,11 @@ public class Cache {
     }
 
     public void flushCacheFile() {
-        SimpleDateFormat dateFormat=new SimpleDateFormat("yyyy/MM/dd");
-        Calendar calendar=Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY,-48);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, -48);
         Date expireDate = calendar.getTime();
         String newCache = "";
-        // remember to use locks rigorously
         synchronized (cacheFileLock) {
             try {
                 BufferedReader br = new BufferedReader(new FileReader(cacheFile));
@@ -105,8 +95,7 @@ public class Cache {
                     String[] contents = line.split(" ");
                     if (contents[0].equals("blacklist")) {
                         newCache = newCache + line + "\n";
-                    }
-                    else {
+                    } else {
                         Date cacheDate = dateFormat.parse(contents[0]);
                         if (cacheDate.after(expireDate)) {
                             newCache = newCache + line + "\n";
@@ -125,17 +114,6 @@ public class Cache {
                 throw new RuntimeException(e);
             }
         }
-        // update cache finally
         readCacheFromFile();
-    }
-
-    public Map<String, String[]> getCache() {
-        synchronized (cacheLock) { return cache; }
-    }
-
-    public void setCache(Map<String, String[]> cache) {
-        synchronized (cacheLock) {
-            this.cache = cache;
-        }
     }
 }
