@@ -170,7 +170,6 @@ public class Sever {
             Message messageOut = messageIn.clone();
 
             if (ansIp.toString().substring(1).equals("0.0.0.0") || ansIp.toString().substring(1).equals("::")) {
-                System.out.println("shit");
                 messageOut.getHeader().setRcode(3);
             }
             else {
