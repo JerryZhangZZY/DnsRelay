@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -25,6 +26,19 @@ public class Cache {
         else {
             readCacheFromFile();
         }
+    }
+
+    public InetAddress getIpFromCache(String domain){
+        synchronized (cacheLock) {
+            if (cache.containsKey(domain)) {
+                try {
+                    return InetAddress.getByName(cache.get(domain)[new Random().nextInt(cache.get(domain).length)]);
+                } catch (UnknownHostException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return null;
     }
 
     public void readCacheFromFile() {

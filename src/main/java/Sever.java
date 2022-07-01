@@ -4,7 +4,6 @@ import org.xbill.DNS.Record;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -31,7 +30,7 @@ public class Sever {
                 Executors.newScheduledThreadPool(1);
         executorService.scheduleAtFixedRate(() -> {
             cache.flushCacheFile();
-            System.out.println("DNS cache flushed");
+            System.out.println("[" + Thread.currentThread().getName() + "] " + "DNS cache flushed");
         }, 0, 2, TimeUnit.DAYS);
 
         while (true) {
@@ -67,122 +66,130 @@ public class Sever {
             }
             Record question = messageIn.getQuestion();
 
-            String domain = messageIn.getQuestion().getName().toString();
-            if (domain.contains("in-addr"))
-                return;
+            String domain = question.getName().toString();
 
-            System.out.println("\ndomain: " + domain);
+            boolean valid = true, useV6 = false;
 
-            InetAddress ansIp;
-
-            boolean contains;
-            synchronized (cache.cacheLock) {
-                contains = cache.getCache().containsKey(domain);
-            }
-            if (contains) {
-                System.out.println("found in cache");
-                String[] ips;
-                synchronized (cache.cacheLock) {
-                    ips = cache.getCache().get(domain);
+            int type = question.getType();
+            switch (type) {
+                // inverse dns
+                case 12 -> {
+                    valid = false;
+                    System.out.println("[" + Thread.currentThread().getName() + "] " + "inverse dns");
                 }
-                try {
-                    ansIp = InetAddress.getByName(ips[new Random().nextInt(ips.length)]);
-                } catch (UnknownHostException e) {
-                    throw new RuntimeException(e);
+                // ipv4 question
+                case 1 -> {
+                    System.out.println("[" + Thread.currentThread().getName() + "] " + "ipv4 question for domain: " + domain);
+                }
+                // ipv6 question
+                case 28 -> {
+                    useV6 = true;
+                    System.out.println("[" + Thread.currentThread().getName() + "] " + "ipv6 question for domain: " + domain);
                 }
             }
-            else {
-                System.out.println("not in cache");
-                DatagramSocket relaySocket;
-                try {
-                    relaySocket = new DatagramSocket();
-                } catch (SocketException e) {
-                    throw new RuntimeException(e);
-                }
-                byte[] relayBuf = messageIn.toWire();
-                InetAddress dnsSeverIp;
-                try {
-                    dnsSeverIp = InetAddress.getByName("8.8.8.8");
-                } catch (UnknownHostException e) {
-                    throw new RuntimeException(e);
-                }
-                DatagramPacket relayRequest = new DatagramPacket(relayBuf, relayBuf.length, dnsSeverIp, 53);
-                try {
-                    relaySocket.send(relayRequest);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
 
-                byte[] buf = new byte[1024];
-                DatagramPacket relayResponse = new DatagramPacket(buf, buf.length);
-                try {
-                    relaySocket.receive(relayResponse);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                relaySocket.close();
-                Message messageResponse;
-                try {
-                    messageResponse = new Message(relayResponse.getData());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            InetAddress ansIp = null;
 
-                //records contain both ARecord(ipv4) and AAAARecord(ipv6)
-                List<Record> records = messageResponse.getSection(Section.ANSWER);
-                ArrayList<InetAddress> ips = new ArrayList<>();
-                int[] ipCount = {0, 0};
-                for (Record record : records) {
-                    if (record instanceof ARecord) {
-                        //ipv4
-                        ARecord aRecord = (ARecord)record;
-                        try {
-                            InetAddress ip = InetAddress.getByAddress(aRecord.getAddress().getAddress());
-                            ips.add(ip);
-                            ipCount[0]++;
-                        } catch (UnknownHostException e) {
-                            throw new RuntimeException(e);
+            if (valid) {
+                ansIp = cache.getIpFromCache(domain + (useV6 ? "-v6" : ""));
+                if (ansIp != null) {
+                    System.out.println("[" + Thread.currentThread().getName() + "] " + "found in cache");
+                }
+                else {
+                    System.out.println("[" + Thread.currentThread().getName() + "] " + "not in cache");
+                    DatagramSocket relaySocket;
+                    try {
+                        relaySocket = new DatagramSocket();
+                    } catch (SocketException e) {
+                        throw new RuntimeException(e);
+                    }
+                    byte[] relayBuf = messageIn.toWire();
+                    InetAddress dnsSeverIp;
+                    try {
+                        dnsSeverIp = InetAddress.getByName("10.0.0.1");
+                    } catch (UnknownHostException e) {
+                        throw new RuntimeException(e);
+                    }
+                    DatagramPacket relayRequest = new DatagramPacket(relayBuf, relayBuf.length, dnsSeverIp, 53);
+                    try {
+                        relaySocket.send(relayRequest);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    byte[] buf = new byte[1024];
+                    DatagramPacket relayResponse = new DatagramPacket(buf, buf.length);
+                    try {
+                        relaySocket.receive(relayResponse);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    relaySocket.close();
+                    Message messageResponse;
+                    try {
+                        messageResponse = new Message(relayResponse.getData());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    List<Record> records = messageResponse.getSection(Section.ANSWER);
+                    ArrayList<InetAddress> ips = new ArrayList<>();
+                    int ipCount = 0;
+                    for (Record record : records) {
+                        if (!useV6 && record instanceof ARecord) {
+                            // ipv4 records
+                            ARecord aRecord = (ARecord)record;
+                            try {
+                                InetAddress ip = InetAddress.getByAddress(aRecord.getAddress().getAddress());
+                                ips.add(ip);
+                                ipCount++;
+                            } catch (UnknownHostException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        else if (record instanceof AAAARecord) {
+                            // ipv6 records
+                            AAAARecord aaaaRecord = (AAAARecord)record;
+                            try {
+                                InetAddress ip = InetAddress.getByAddress(aaaaRecord.getAddress().getAddress());
+                                ips.add(ip);
+                                ipCount++;
+                            } catch (UnknownHostException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
                     }
-                    else if (record instanceof AAAARecord) {
-                        //ipv6
-                        AAAARecord aaaaRecord = (AAAARecord)record;
-                        try {
-                            InetAddress ip = InetAddress.getByAddress(aaaaRecord.getAddress().getAddress());
-                            ips.add(ip);
-                            ipCount[1]++;
-                        } catch (UnknownHostException e) {
-                            throw new RuntimeException(e);
-                        }
+                    if (ips.size() == 0) {
+                        System.out.println("[" + Thread.currentThread().getName() + "] " + "no ipv" + (useV6 ? 6 : 4) + " result found from remote dns");
+                        valid = false;
+                    }
+                    else {
+                        System.out.println("[" + Thread.currentThread().getName() + "] " + "in total " + ips.size() + " result(s)");
+                        ansIp = ips.get(new Random().nextInt(ips.size()));
+
+                        // TODO conf
+                        if (cache.getIpFromCache(domain + (useV6 ? "-v6" : "")) == null)
+                            cache.addCacheToFile(domain + (useV6 ? "-v6" : ""), ips);
                     }
                 }
-                if (ips.size() == 0)
-                    return;
-                System.out.println("in total " + ips.size() + " result(s)");
-                System.out.println("ipv4: " + ipCount[0] + " result(s)");
-                System.out.println("ipv6: " + ipCount[1] + " result(s)");
-                ansIp = ips.get(new Random().nextInt(ips.size()));
-                cache.addCacheToFile(domain, ips);
             }
-
-            System.out.println("answer ip: " + ansIp.toString().substring(1));
 
             Message messageOut = messageIn.clone();
-
-            if (ansIp.toString().substring(1).equals("0.0.0.0") || ansIp.toString().substring(1).equals("::")) {
+            if (!valid) {
                 messageOut.getHeader().setRcode(3);
             }
             else {
-                Record answer = null;
-                if (ansIp instanceof Inet4Address) {            //ipv4
+                System.out.println("[" + Thread.currentThread().getName() + "] " + "answer ip: " + ansIp.toString().substring(1));
+                Record answer;
+                // ipv4 answer
+                if (!useV6) {
                     answer = new ARecord(question.getName(), question.getDClass(), 64, ansIp);
                 }
-                else if (ansIp instanceof Inet6Address){        //ipv6
+                // ipv6 answer
+                else {
                     answer = new AAAARecord(question.getName(), question.getDClass(), 64, ansIp);
                 }
                 messageOut.addRecord(answer, Section.ANSWER);
             }
-
             byte[] buf = messageOut.toWire();
             DatagramPacket response = new DatagramPacket(buf, buf.length, srcIp, sourcePort);
             try {
