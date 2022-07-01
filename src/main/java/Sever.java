@@ -147,7 +147,7 @@ public class Sever {
                                 throw new RuntimeException(e);
                             }
                         }
-                        else if (record instanceof AAAARecord) {
+                        else if (useV6 && record instanceof AAAARecord) {
                             // ipv6 records
                             AAAARecord aaaaRecord = (AAAARecord)record;
                             try {
