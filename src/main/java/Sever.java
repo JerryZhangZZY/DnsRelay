@@ -1,7 +1,5 @@
 import org.xbill.DNS.*;
 import org.xbill.DNS.Record;
-import org.xbill.DNS.dnssec.R;
-
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
