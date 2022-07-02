@@ -39,6 +39,58 @@ The DNS relay should be able to:
 
 ## 2. Overall Design
 
+```mermaid
+flowchart TB
+A[Client]
+B[Resolver]
+C[Cache]
+D[Romote DNS Server]
+
+A --> |request| B
+B --> |response| A
+
+subgraph DNS Relay
+B --> |read| C
+C --> |save| B
+end
+
+B --> |request| D
+D --> |response| B
+```
+
+<center><b><font size ='2'>Figure 1. Functional modules</font></b></center></font>
+
+```mermaid
+flowchart TB
+
+st([Start])
+1[/Read config/]
+2[Block at receive]
+3[Request received]
+4[Pick a new thread from thread pool]
+5[Resolve request]
+6{Domain in cache?}
+7[Get ip from cache]
+8[Relay request to remote DNS server]
+9[Get ip from remote]
+10[Add to cache]
+11{Valid ip?}
+12[Encapsulate ip into datagram]
+13[Set RCODE]
+14[Send response back to client]
+nd([End of child thread])
+
+st-->1-->2-->3-->4-->2
+4-->5-->6
+6-->|true|7-->11
+6-->|false|8-->9-->10-->11
+11-->|true|12-->14
+11-->|false|13-->14
+14-->nd
+```
+
+<center><b><font size ='2'>Figure 2. Overall flowchart</font></b></center></font>
+
 ## 3. Detail Design
 
 ## 4. Testing & Results
