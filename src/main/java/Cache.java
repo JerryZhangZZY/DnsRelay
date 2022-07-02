@@ -8,7 +8,6 @@ import java.util.*;
 public class Cache {
     private final String path = "cache.txt";
     private final File cacheFile;
-    public final Object cacheFileLock = new Object();
     private Map<String, String[]> cache;
     public final Object cacheLock = new Object();
 
@@ -38,16 +37,14 @@ public class Cache {
     }
 
     public void readCacheFromFile() {
-        synchronized (cacheFileLock) {
+        synchronized (cacheLock) {
             try {
                 BufferedReader br = new BufferedReader(new FileReader(cacheFile));
                 String line;
                 while ((line = br.readLine()) != null) {
                     String[] contents = line.split(" ");
                     String[] ips = Arrays.copyOfRange(contents, 2, contents.length);
-                    synchronized (cacheLock) {
-                        cache.put(contents[1], ips);
-                    }
+                    cache.put(contents[1], ips);
                 }
                 br.close();
             } catch (IOException e) {
@@ -57,7 +54,7 @@ public class Cache {
     }
 
     public void addCacheToFile(String domain, ArrayList<InetAddress> ips) {
-        synchronized (cacheFileLock) {
+        synchronized (cacheLock) {
             BufferedWriter bw = null;
             try {
                 bw = new BufferedWriter(new FileWriter(cacheFile, true));
@@ -87,7 +84,7 @@ public class Cache {
         calendar.set(Calendar.HOUR_OF_DAY, -48);
         Date expireDate = calendar.getTime();
         String newCache = "";
-        synchronized (cacheFileLock) {
+        synchronized (cacheLock) {
             try {
                 BufferedReader br = new BufferedReader(new FileReader(cacheFile));
                 String line;
