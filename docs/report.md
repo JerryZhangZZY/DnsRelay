@@ -39,19 +39,21 @@ The DNS relay should be able to:
 
 ## 2. Overall Design
 
+### 2.1. 
+
 ```mermaid
 flowchart TB
 A[Client]
 B[Resolver]
-C[Cache]
-D[Romote DNS Server]
+C[(Cache)]
+D[Remote DNS Server]
 
 A --> |request| B
 B --> |response| A
 
 subgraph DNS Relay
-B --> |read| C
-C --> |save| B
+B --> |save| C
+C --> |read| B
 end
 
 B --> |request| D
