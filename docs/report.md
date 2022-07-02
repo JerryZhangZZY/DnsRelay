@@ -13,7 +13,7 @@
 
 ## 0. Overview
 
-The aim of this project is to design and implement a DNS relay that connects local DNS resolver with remote DNS servers. Typically, when a user program is trying to interact with the domain name space, it send queries to the resolver, and the resolver sends back the response directly if found in its cache, otherwise the resolver queries remote DNS servers and forwards the response back to user the program. In this design, the DNS relay works as a local DNS server whom the resolver resorts to, and takes the role of connecting to remote DNS server. The new domain system configuration has two benefits. First, it can ease the burden or remote DNS servers by replying to resolver with its own DNS cache. Second, it increase Internet connection speed by using local DNS cache, which is faster than remote DNS server. Third, it can block some undesired connection to the Internet by adding certain domain names to blacklist. 
+The aim of this project is to design and implement a DNS relay that connects clients with remote DNS servers. Typically, when a user program is trying to interact with the domain name space, it send queries directly to the remote DNS server. In this design, the DNS relay works as a local DNS server or resolver whom the clients resort to, and takes the role of connecting to remote DNS server. The new domain system configuration has two benefits. First, it can ease the burden or remote DNS servers by replying to clients with its own DNS cache. Second, it increase Internet connection speed by using local DNS cache, which is faster than remote DNS server. Third, it can block some undesired connection to the Internet by adding certain domain names to blacklist. 
 
 ## 1. Requirement Analysis
 
