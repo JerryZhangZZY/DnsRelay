@@ -186,8 +186,7 @@ public class Sever {
 
                     if (nop) {
                         messageOut = messageResponse;
-                    }
-                    else {
+                    } else {
                         List<Record> records = messageResponse.getSection(Section.ANSWER);
                         ArrayList<InetAddress> ips = new ArrayList<>();
                         for (Record record : records) {
@@ -217,11 +216,23 @@ public class Sever {
                         } else {
                             log.addLog("[" + Thread.currentThread().getName() + "] " + "in total " + ips.size() + " result(s)");
                             ansIp = ips.get(new Random().nextInt(ips.size()));
-                            if (useCache)
-                                if (cache.getIpFromCache(domain + (useV6 ? "-v6" : "")) == null) {
-                                    cache.addCacheToFile(domain + (useV6 ? "-v6" : ""), ips);
-                                    log.addLog("[" + Thread.currentThread().getName() + "] " + "added to cache file and reloaded cache");
-                                }
+                            if (useCache) {
+                                boolean finalUseV6 = useV6;
+                                String parentName = Thread.currentThread().getName();
+                                Thread update = new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        synchronized (cache.cacheLock) {
+                                            if (cache.getIpFromCache(domain + (finalUseV6 ? "-v6" : "")) == null) {
+                                                cache.addCacheToFile(domain + (finalUseV6 ? "-v6" : ""), ips);
+                                                log.addLog("[" + parentName + "-child] " + "added to cache file and reloaded cache");
+                                            }
+                                        }
+
+                                    }
+                                });
+                                update.start();
+                            }
                         }
                     }
                 }
