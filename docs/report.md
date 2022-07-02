@@ -17,7 +17,7 @@ The aim of this project is to design and implement a DNS relay that connects loc
 
 ## 1. Requirement Analysis
 
-### Functional Requirements
+### 1.1. Functional Requirements
 
 The DNS relay should be able to:
 
@@ -32,7 +32,7 @@ The DNS relay should be able to:
 9. Support multi-threading to given best performance
 10. Log connection and  operation information.
 
-### Non-functional Requirements
+### 1.2. Non-functional Requirements
 
 1. The software works on **Windows** or Linux
 2. The program is written is C, C++, or **Java**
@@ -97,9 +97,11 @@ st-->1-->2-->3-->4-->2
 
 ## 5. Summary & Future Improvement
 
+### 5.1. Summary
+
 The DNS relay program is capable of handling various DNS query requests. On entering `nslookup example.com localhost` in `cmd`, the relay program receives the question from resolver and return with a answer from its local cache or remote DNS server. Apart from IPv4, the program has support for **IPv6** DNS query by returning type AAAA record, and it can also deal with records of other types including **NS, CNAME, and MX**. By using **a thread pool**, the server is able to handle multiple request at the same time. This **concurrency** configuration greatly helps improve the performance of the program. Mutex Lock is used to ensure **thread-safe** and avoid race condition.  In order to easy to burden or remote DNS server and speed up DNS look-up, the program uses a **cache** to store DNS query result for a preconfigured period of time and expired DNS cache is **automatically flushed**. The cache is supported by a **hash map** in the memory, which means any query in the cache can be done with time complexity of $O(1)$, and thus other threads is very unlikely to be blocked when they access the cache. This program also enables **flow control**. If multiple IP addresses are found in cache or received from remote server (which means the Internet service has many servers for load balancing), it will randomly select one to send back to resolver. In this way, user programs access the service via different IP addresses and servers fairly. **Log** functions is used to record the connection and operations of the relay program. Users can track all query and response records in the log file.
 
-### Room for Improvements
+### 5.2. Room for Improvements
 
 - Blacklist can be separate from cache so that it can be maintained more conveniently
 - Log can be clearable in case the file is very large
