@@ -24,12 +24,14 @@ Add websites to **_cache.txt_** as follows:
 
 ```text
 blacklist [website you want to block]. 0.0.0.0
+blacklist [website you want to block].-v6 ::
 ```
 
 If you want to set expire time, here's an example:
 
 ```text
 2022/07/02 www.taobao.com. 0.0.0.0
+2022/07/02 www.taobao.com.-v6 ::
 ```
 
 Assume the cache limit is set to 2 days. Then the server will block _www.taobao.com_ until 2022/07/04.
