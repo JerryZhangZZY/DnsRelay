@@ -13,7 +13,7 @@
 
 ## 0. Overview
 
-The aim of this project is to design and implement a DNS relay that connects clients with remote DNS servers. Typically, when a user program is trying to interact with the domain name space, it send queries directly to the remote DNS server. In this design, the DNS relay works as a local DNS server or resolver whom the clients resort to, and takes the role of connecting to remote DNS server. The new domain system configuration has two benefits. First, it can ease the burden or remote DNS servers by replying to clients with its own DNS cache. Second, it increase Internet connection speed by using local DNS cache, which is faster than remote DNS server. Third, it can block some undesired connection to the Internet by adding certain domain names to blacklist. 
+The aim of this project is to design and implement a DNS relay that connects clients with remote DNS servers. Typically, when a user program is trying to interact with the domain name space, it send queries directly to the remote DNS server. In this design, the DNS relay works as a local DNS server or resolver whom the clients resort to, and takes the role of connecting to remote DNS server. The new domain system configuration has two benefits. First, it can ease the burden or remote DNS servers by replying to clients with its own DNS cache. Second, it increase Internet connection speed by using local DNS cache, which is faster than remote DNS server. Third, it can block some undesired connection to the Internet by adding certain domain names to blacklist.
 
 ## 1. Requirement Analysis
 
@@ -39,7 +39,32 @@ The DNS relay should be able to:
 
 ## 2. Overall Design
 
-### 2.1. 
+### 2.1. Basic Principles
+
+#### 2.1.1. Function of DNS Relay
+
+The DNS relay server is deployed between client and remote DNS server *(Figure 1)*. By adding additional functional modules to this server, we can achieve additional functions such as local caching, blacklisting, traffic control, etc.
+
+```mermaid
+flowchart BT
+
+A1[Client]
+B1[Remote DNS Server]
+
+A2[Client]
+B2[DNS Relay]
+C2[Remote DNS Server]
+
+A1 <---> B1
+
+A2 <--> B2 <--> C2
+```
+
+<center><b><font size ='2'>Figure 1. Traditional & DNS relay</font></b></center></font>
+
+#### 2.1.2. Data Flow
+
+The *Figure 2* below shows the data flow of the whole system.
 
 ```mermaid
 flowchart TB
@@ -60,7 +85,17 @@ B --> |request| D
 D --> |response| B
 ```
 
-<center><b><font size ='2'>Figure 1. Functional modules</font></b></center></font>
+<center><b><font size ='2'>Figure 2. Functional modules</font></b></center></font>
+
+Client first send an capsulate UDP datagram request to the resolver. The resolver decapsulate it and check if the request domain is cached. If the result is found in cache, then encapsulate it into the packet and send it back to the client. Otherwise, it should relay the request to the remote DNS server, then pass the server's response back to the client. Note that this is just the basic structure of DNS relay which only add a function of local caching.
+
+#### 2.1.3. DNS Datagram
+
+##### 2.1.3.1. DNS Header
+
+##### 2.1.3.2. DNS Answer Record
+
+### 2.2. Overall Process
 
 ```mermaid
 flowchart TB
@@ -91,7 +126,7 @@ st-->1-->2-->3-->4-->2
 14-->nd
 ```
 
-<center><b><font size ='2'>Figure 2. Overall flowchart</font></b></center></font>
+<center><b><font size ='2'>Figure 3. Overall flowchart</font></b></center></font>
 
 ## 3. Detail Design
 
