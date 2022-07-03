@@ -86,8 +86,10 @@ public abstract class MyRecord {
         MyRecord rec;
         if (hasData) {
             Supplier<MyRecord> factory = MyType.getFactory(type);
-            rec = factory.get();
-
+            if (factory != null)
+                rec = factory.get();
+            else
+                rec = new MyEmptyRecord();
         } else {
             rec = new MyEmptyRecord();
         }

@@ -10,4 +10,3 @@ blacklist www.bbc.com. 0.0.0.0
 blacklist www.bbc.com.-v6 ::
 blacklist edition.cnn.com. 0.0.0.0
 blacklist edition.cnn.com.-v6 ::
-2022/07/04 baidu.com. 220.181.38.251 220.181.38.148
