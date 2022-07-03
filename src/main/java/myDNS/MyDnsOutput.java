@@ -97,6 +97,7 @@ public class MyDnsOutput {
         writeByteArray(b, 0, b.length);
     }
     public void writeByteArray(byte[] b, int off, int len) {
+        need(len);
         System.arraycopy(b, off, array, pos, len);
         pos += len;
     }
