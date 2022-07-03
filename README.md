@@ -1,12 +1,12 @@
-# Dns Relay Server
+# DNS Relay Server
 
 > Project of BUPT IoT 2022 junior summer school.
 
 ## Pro Feature
 
-- Ipv6 support
+- IPv6 support
 - Flow control
-- Configurable remote dns server
+- Configurable remote DNS server
 - Configurable cache usage
 - Configurable multithreading
 - Configurable cache auto-cleaning
