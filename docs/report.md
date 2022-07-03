@@ -197,7 +197,61 @@ And we found that both type A and type AAAA response have no **Answers** section
 
 <center><b><font size ='2'>Figure 11. Packets captured 3</font></b></center></font>
 
-### 2.2. Overall Process
+### 2.2. Advanced Server Function Design
+
+#### 2.2.1. IPv6 Support
+
+- Identify the question type and add corresponding records to the answer section.
+- Store ipv4 and ipv6 addresses separately in cache.
+
+#### 2.2.2. Flow Control
+
+- **Averaging** the flow by distributing IP addresses equally to each request.
+- Only necessary when a large number of requests are received in a short period of time.
+- Implement flow control by simply return one address **randomly** can get a nice effect.
+
+#### 2.2.3. Customized Server Settings
+
+- Create **boot.properties** as the config file of the DNS relay server.
+- Stores server settings in it and can be edited by users.
+- Read settings at the beginning of the program an set as instance vars.
+- Use **default** settings if config load failed.
+
+#### 2.2.4. Configurable Cache Auto-cleaning
+
+- Add an attribute of cache limit in boot.properties.
+- Initialize a scheduled executor **service** at the beginning of the main thread.
+- The service will run once first and wake up every **24 hours**.
+- The service **clears** the expired cache and **updates** cache map in RAM.
+
+#### 2.2.5. Blacklist with Expiry Time
+
+- If the returned address is [0.0.0.0](0.0.0.0) or [::](::), then the requested domain is in **blacklist**. The program will set the **RCODE** to 3<sub>10</sub> and send the response.
+- Set the **timestamp** to a chosen date and the cache **cleaning** service will delete 
+
+#### 2.2.6. Configurable remote DNS server
+
+- Add an attribute of the remote DNS server IP in boot.properties.
+- Get it from instance var and **encapsulate** into datagram when need to send request to the remote server.
+
+#### 2.2.7. Configurable Cache Usage
+
+- Add an attribute of cache usage IP in boot.properties.
+- **Skip** finding result in cache and request to remote server directly of it is set to FALSE.
+
+#### 2.2.8. Configurable Multithreading
+
+- Add an attribute of thread pool size in boot.properties.
+- Initialize a **thread pool** of the given size.
+- When the main thread **receives** a request, **pick** a new thread from the thread pool and start the **resolver** task in the new thread.
+
+#### 2.2.9. Logging
+
+- Implement a log class which can generate logs and save locally.
+- The log records the behaviour of the server in detail.
+- Print to the terminal simultaneously.
+
+### 2.3. Overall Flow
 
 ```mermaid
 flowchart TB
