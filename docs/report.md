@@ -210,11 +210,11 @@ And we found that both type A and type AAAA response have no **Answers** section
 - Only necessary when a large number of requests are received in a short period of time.
 - Implement flow control by simply return one address **randomly** can get a nice effect.
 
-#### 2.2.3. Customized Server Settings
+#### 2.2.3. Customizable Server Configuration
 
 - Create **boot.properties** as the config file of the DNS relay server.
 - Stores server settings in it and can be edited by users.
-- Read settings at the beginning of the program an set as instance vars.
+- Read configurations at the beginning of the program an set as instance vars.
 - Use **default** settings if config load failed.
 
 #### 2.2.4. Configurable Cache Auto-cleaning
@@ -226,7 +226,7 @@ And we found that both type A and type AAAA response have no **Answers** section
 
 #### 2.2.5. Blacklist with Expiry Time
 
-- If the returned address is [0.0.0.0](0.0.0.0) or [::](::), then the requested domain is in **blacklist**. The program will set the **RCODE** to 3<sub>10</sub> and send the response.
+- If the returned address is [0.0.0.0](0.0.0.0) or [::](::), then the requested domain is in **blacklist**. The program will set the **RCODE** to 3<sub>d</sub> and send the response.
 - Set the **timestamp** to a chosen date and the cache **cleaning** service will delete 
 
 #### 2.2.6. Configurable remote DNS server
@@ -247,11 +247,40 @@ And we found that both type A and type AAAA response have no **Answers** section
 
 #### 2.2.9. Logging
 
-- Implement a log class which can generate logs and save locally.
+- Implement a log class which can generate logs and save **locally**.
 - The log records the behaviour of the server in detail.
-- Print to the terminal simultaneously.
+- **Print** to the terminal simultaneously.
 
-### 2.3. Overall Flow
+### 2.3. Module Decomposition
+
+The following treemap shows the module decomposition of the whole system.
+
+```mermaid
+graph TB
+
+A[DNS Relay]
+B(Request Receiving Module)
+B1(Resolver Module)
+B2(Log Module)
+B3(Cache Module)
+C(Request Handling Module)
+D(Cache Cleaning Mudule)
+E(Configuration Module)
+
+A --- B
+A --- C
+A --- D
+A --- E
+C --- B1
+C --- B2
+C --- B3
+```
+
+<center><b><font size ='2'>Figure 12. Module tree</font></b></center></font>
+
+### 2.4. Overall Flow
+
+Below you can see the major **work flow** of our relay system(cache cleaning module excluded). For detailed description see [Module Design](#3. Module Design) right behind.
 
 ```mermaid
 flowchart TB
@@ -269,7 +298,7 @@ st([Start])
 10[[Add to cache]]
 11{Valid ip?}
 12[Encapsulate ip into datagram]
-13[Set RCODE]
+13[Set RCODE = 3<sub>d</sub>]
 14[Send response back to client]
 nd([End of child thread])
 
@@ -283,9 +312,9 @@ st-->1-->2-->3-->4-->2
 14-->nd
 ```
 
-<center><b><font size ='2'>Figure ?????. Overall flowchart</font></b></center></font>
+<center><b><font size ='2'>Figure 13. Overall flowchart</font></b></center></font>
 
-## 3. Detail Design
+## 3. Module Design
 
 ## 4. Testing & Results
 
