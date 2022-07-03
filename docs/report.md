@@ -195,6 +195,8 @@ And we found that both type A and type AAAA response have no **Answers** section
 
 ![6](report images/6.png)
 
+<center><b><font size ='2'>Figure 11. Packets captured 3</font></b></center></font>
+
 ### 2.2. Overall Process
 
 ```mermaid
