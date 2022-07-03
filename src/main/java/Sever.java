@@ -83,11 +83,11 @@ public class Sever {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            pool.execute(new Service(request, socket, cache, new Log(), remoteDnsServer, useCache));
+            pool.execute(new Handler(request, socket, cache, new Log(), remoteDnsServer, useCache));
         }
     }
 
-    public static class Service implements Runnable {
+    public static class Handler implements Runnable {
         DatagramPacket request;
         DatagramSocket socket;
         Cache cache;
@@ -95,7 +95,7 @@ public class Sever {
         String remoteDnsServer;
         boolean useCache;
 
-        public Service(DatagramPacket request, DatagramSocket socket,
+        public Handler(DatagramPacket request, DatagramSocket socket,
                        Cache cache, Log log, String remoteDnsServer, boolean useCache) {
             this.request = request;
             this.socket = socket;
