@@ -222,7 +222,7 @@ public class Sever {
                                 Thread update = new Thread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        synchronized (cache.cacheLock) {
+                                        synchronized (cache.getCacheLock()) {
                                             if (cache.getIpFromCache(domain + (finalUseV6 ? "-v6" : "")) == null) {
                                                 cache.addCacheToFile(domain + (finalUseV6 ? "-v6" : ""), ips);
                                                 log.addLog("[" + parentName + "-child] " + "added to cache file and reloaded cache");

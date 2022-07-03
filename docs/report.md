@@ -27,7 +27,7 @@ The DNS relay should be able to:
 4. Query the remote DNS server if IP not found in cache
 5. Receive remote DNS server reply and fetch the returned IPs
 6. Pack the IP from cache or remote DNS server in a reply message
-7. Respond the resolver with this message containing the IP address
+7. Respond the client with this message containing the IP address
 8. Block queries for domains that are recorded in blacklist
 9. Support multi-threading to given best performance
 10. Log connection and  operation information.

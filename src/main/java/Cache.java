@@ -9,7 +9,7 @@ public class Cache {
     private final String path = "cache.txt";
     private final File cacheFile;
     private Map<String, String[]> cache;
-    public final Object cacheLock = new Object();
+    private final Object cacheLock = new Object();
 
     public Cache() {
         cacheFile = new File(path);
@@ -112,5 +112,9 @@ public class Cache {
             }
         }
         readCacheFromFile();
+    }
+
+    public Object getCacheLock() {
+        return cacheLock;
     }
 }
