@@ -6,6 +6,7 @@
 
 - IPv6 support
 - Flow control
+- Blacklist with expiry time
 - Configurable remote DNS server
 - Configurable cache usage
 - Configurable multithreading
