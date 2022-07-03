@@ -109,7 +109,7 @@ public class Sever {
         @Override
         public void run() {
             InetAddress srcIp = request.getAddress();
-            int sourcePort = request.getPort();
+            int srcPort = request.getPort();
             Message messageIn;
             try {
                 messageIn = new Message(request.getData());
@@ -143,7 +143,7 @@ public class Sever {
             }
 
             InetAddress ansIp = null;
-            Message messageOut = null;
+            DatagramPacket response = null;
 
             if (valid) {
                 if (useCache)
@@ -178,16 +178,15 @@ public class Sever {
                     }
                     relaySocket.close();
 
-                    Message messageResponse;
-                    try {
-                        messageResponse = new Message(relayResponse.getData());
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
                     if (nop) {
-                        messageOut = messageResponse;
+                        response = relayResponse;
                     } else {
+                        Message messageResponse;
+                        try {
+                            messageResponse = new Message(relayResponse.getData());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                         List<Record> records = messageResponse.getSection(Section.ANSWER);
                         ArrayList<InetAddress> ips = new ArrayList<>();
                         for (Record record : records) {
@@ -239,7 +238,7 @@ public class Sever {
                 }
             }
             if (!nop) {
-                messageOut = messageIn.clone();
+                Message messageOut = messageIn.clone();
                 if (!valid || ansIp.toString().substring(1).equals("0.0.0.0")
                         || ansIp.toString().substring(1).equals("::")
                         || ansIp.toString().substring(1).equals("0:0:0:0:0:0:0:0")) {
@@ -256,9 +255,11 @@ public class Sever {
                     messageOut.addRecord(answer, Section.ANSWER);
                     log.addLog("[" + Thread.currentThread().getName() + "] " + "answer ip: " + ansIp.toString().substring(1));
                 }
+                byte[] buf = messageOut.toWire();
+                response = new DatagramPacket(buf, buf.length);
             }
-            byte[] buf = messageOut.toWire();
-            DatagramPacket response = new DatagramPacket(buf, buf.length, srcIp, sourcePort);
+            response.setAddress(srcIp);
+            response.setPort(srcPort);
             try {
                 socket.send(response);
             } catch (IOException e) {
