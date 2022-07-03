@@ -136,7 +136,7 @@ The header section of DNS datagram is shown in *Figure 3*. ID is randomly genera
 
 ##### 2.1.3.3. DNS Answer
 
-We only need to fill the **RDLENGTH** and **RDATA** in the response packet while the rest of the sections only need to be simply cloned. The the DNS relay implementation, only ARecords and AAAARecords need to be attached. This can be achieved by simply call `addRecord()` function defined in DNSJava.
+We only need to fill the **RDLENGTH** and **RDATA** in the response packet while the rest of the sections only need to be simply cloned. The the DNS relay implementation, only **ARecord**s and **AAAARecord**s need to be attached. This can be achieved by simply call `addRecord()` function defined in DNSJava.
 
 ```
   0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
@@ -156,6 +156,44 @@ We only need to fill the **RDLENGTH** and **RDATA** in the response packet while
 ```
 
 <center><b><font size ='2'>Figure 5. DNS Question</font></b></center></font>
+
+#### 2.1.4. Possible Datagram
+
+We use **Wireshark** to capture the possible DNS datagram during the whole process. This is very instructive for the DNS relay design and implementation.
+
+First use `nslookup` command to request [www.google.com](www.google.com). It returns both an IPv4 address and an IPv6 address(*Figure 6*).
+
+![1](report images/1.png)
+
+<center><b><font size ='2'>Figure 6. nslookup request 1</font></b></center></font>
+
+Then we observe the packets exchange captured in Wireshark in detail(*Figure 7)*. As you can see, a inverse DNS request is firstly sent from port 53 to the remote DNS server(10.0.0.1). After receiving the response, type A and AAAA request and response happens in sequence.
+
+![2](report images/2.png)
+
+<center><b><font size ='2'>Figure 7. Packets captured 1</font></b></center></font>
+
+We also tried the IPv6-only website(*Figure 8*). This is similar to IPv4-only.
+
+![3](report images/3.png)
+
+<center><b><font size ='2'>Figure 8. nslookup request 2</font></b></center></font>
+
+Compare the type A response(*Figure 9*) with the previous one, we found that the **flags** are identical but the latest one has no **Answers** section since [byr.pt](byr.pt) is a IPv6-only website.
+
+![4](report images/4.png)
+
+<center><b><font size ='2'>Figure 9. Packets captured 2</font></b></center></font>
+
+Finally, We tested the case that the domain doesn't exist(*Figure 10*).
+
+![5](report images/5.png)
+
+<center><b><font size ='2'>Figure 10. nslookup request 3</font></b></center></font>
+
+And we found that both type A and type AAAA response have no **Answers** section and the RCODE are set to 3<sub>d</sub>(Figure 11), indicating that no such domain has been found.
+
+![6](report images/6.png)
 
 ### 2.2. Overall Process
 
