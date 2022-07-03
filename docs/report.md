@@ -93,7 +93,7 @@ Client first send an capsulate UDP datagram request to the resolver. The resolve
 
 ##### 2.1.3.1. DNS Header
 
-##### 2.1.3.2. DNS Answer Record
+##### 2.1.3.2. DNS Answer myDNS.Record
 
 ### 2.2. Overall Process
 

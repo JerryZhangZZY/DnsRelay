@@ -1,5 +1,8 @@
-import org.xbill.DNS.*;
-import org.xbill.DNS.Record;
+//import dns.Record;
+//import dns.*;
+
+import myDNS.MyRecord;
+import myDNS.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -109,13 +112,13 @@ public class Sever {
         public void run() {
             InetAddress srcIp = request.getAddress();
             int sourcePort = request.getPort();
-            Message messageIn;
+            MyMessage messageIn;
             try {
-                messageIn = new Message(request.getData());
+                messageIn = new MyMessage(request.getData());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            Record question = messageIn.getQuestion();
+            MyRecord question = messageIn.getQuestion();
             String domain = question.getName().toString();
             boolean valid = true, useV6 = false, nop = false;
 
@@ -142,7 +145,7 @@ public class Sever {
             }
 
             InetAddress ansIp = null;
-            Message messageOut = null;
+            MyMessage messageOut = null;
 
             if (valid) {
                 if (useCache)
@@ -177,9 +180,9 @@ public class Sever {
                     }
                     relaySocket.close();
 
-                    Message messageResponse;
+                    MyMessage messageResponse;
                     try {
-                        messageResponse = new Message(relayResponse.getData());
+                        messageResponse = new MyMessage(relayResponse.getData());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -187,21 +190,21 @@ public class Sever {
                     if (nop) {
                         messageOut = messageResponse;
                     } else {
-                        List<Record> records = messageResponse.getSection(Section.ANSWER);
+                        List<MyRecord> records = messageResponse.getSection(1);
                         ArrayList<InetAddress> ips = new ArrayList<>();
-                        for (Record record : records) {
-                            if (!useV6 && record instanceof ARecord) {
+                        for (MyRecord record : records) {
+                            if (!useV6 && record instanceof MyARecord) {
                                 // ipv4 records
-                                ARecord aRecord = (ARecord) record;
+                                MyARecord aRecord = (MyARecord) record;
                                 try {
                                     InetAddress ip = InetAddress.getByAddress(aRecord.getAddress().getAddress());
                                     ips.add(ip);
                                 } catch (UnknownHostException e) {
                                     throw new RuntimeException(e);
                                 }
-                            } else if (useV6 && record instanceof AAAARecord) {
+                            } else if (useV6 && record instanceof MyAAAARecord) {
                                 // ipv6 records
-                                AAAARecord aaaaRecord = (AAAARecord) record;
+                                MyAAAARecord aaaaRecord = (MyAAAARecord) record;
                                 try {
                                     InetAddress ip = InetAddress.getByAddress(aaaaRecord.getAddress().getAddress());
                                     ips.add(ip);
@@ -245,14 +248,14 @@ public class Sever {
                     messageOut.getHeader().setRcode(3);
                     log.addLog("[" + Thread.currentThread().getName() + "] " + "answer: non-existent domain");
                 } else {
-                    Record answer;
+                    MyRecord answer;
                     // ipv4 answer
                     if (!useV6)
-                        answer = new ARecord(question.getName(), question.getDClass(), 64, ansIp);
+                        answer = new MyARecord(question.getName(), question.getDClass(), 64, ansIp);
                         // ipv6 answer
                     else
-                        answer = new AAAARecord(question.getName(), question.getDClass(), 64, ansIp);
-                    messageOut.addRecord(answer, Section.ANSWER);
+                        answer = new MyAAAARecord(question.getName(), question.getDClass(), 64, ansIp);
+                    messageOut.addRecord(answer, 1);
                     log.addLog("[" + Thread.currentThread().getName() + "] " + "answer ip: " + ansIp.toString().substring(1));
                 }
             }
