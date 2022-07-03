@@ -355,7 +355,6 @@ public class MyType {
     static {
         types.add(A, "A", MyARecord::new);
         types.add(AAAA, "AAAA", MyAAAARecord::new);
-        types.add(SOA, "SOA", MySoaRecord::new);
     }
 
     private MyType() {}

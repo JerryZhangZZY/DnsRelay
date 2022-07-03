@@ -69,16 +69,16 @@ public abstract class MyRecord {
         rec = getEmptyRecord(name, type, dclass, ttl, in != null);
         if (in != null) {
             if (in.remaining() < length) {
-                throw new IOException("truncated record");
+//                throw new IOException("truncated record");
             }
-            in.setActive(length);
+//            in.setActive(length);
 
             rec.rrFromWire(in);
 
             if (in.remaining() > 0) {
-                throw new IOException("invalid record length");
+//                throw new IOException("invalid record length");
             }
-            in.clearActive();
+//            in.clearActive();
         }
         return rec;
     }

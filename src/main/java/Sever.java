@@ -1,6 +1,3 @@
-//import dns.Record;
-//import dns.*;
-
 import myDNS.MyRecord;
 import myDNS.*;
 
@@ -18,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Sever {
 
+    // default settings
     static boolean useCache = true;
     static int cacheLimitInDays = 2;
     static int threadPoolSize = 10;
@@ -67,10 +65,10 @@ public class Sever {
         ScheduledExecutorService executorService =
                 Executors.newScheduledThreadPool(1);
         executorService.scheduleAtFixedRate(() -> {
-            cache.flushCacheFile();
+            cache.flushCacheFile(cacheLimitInDays);
             log.addLog("dns cache flushed and loaded");
             log.writeLog();
-        }, 0, cacheLimitInDays, TimeUnit.DAYS);
+        }, 0, 1, TimeUnit.DAYS);
 
         // wait for cache loaded
         try {
@@ -111,7 +109,7 @@ public class Sever {
         @Override
         public void run() {
             InetAddress srcIp = request.getAddress();
-            int sourcePort = request.getPort();
+            int srcPort = request.getPort();
             MyMessage messageIn;
             try {
                 messageIn = new MyMessage(request.getData());
@@ -145,7 +143,7 @@ public class Sever {
             }
 
             InetAddress ansIp = null;
-            MyMessage messageOut = null;
+            DatagramPacket response = null;
 
             if (valid) {
                 if (useCache)
@@ -180,16 +178,15 @@ public class Sever {
                     }
                     relaySocket.close();
 
-                    MyMessage messageResponse;
-                    try {
-                        messageResponse = new MyMessage(relayResponse.getData());
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
                     if (nop) {
-                        messageOut = messageResponse;
+                        response = relayResponse;
                     } else {
+                        MyMessage messageResponse;
+                        try {
+                            messageResponse = new MyMessage(relayResponse.getData());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                         List<MyRecord> records = messageResponse.getSection(1);
                         ArrayList<InetAddress> ips = new ArrayList<>();
                         for (MyRecord record : records) {
@@ -241,7 +238,7 @@ public class Sever {
                 }
             }
             if (!nop) {
-                messageOut = messageIn.clone();
+                MyMessage messageOut = messageIn.clone();
                 if (!valid || ansIp.toString().substring(1).equals("0.0.0.0")
                         || ansIp.toString().substring(1).equals("::")
                         || ansIp.toString().substring(1).equals("0:0:0:0:0:0:0:0")) {
@@ -258,9 +255,11 @@ public class Sever {
                     messageOut.addRecord(answer, 1);
                     log.addLog("[" + Thread.currentThread().getName() + "] " + "answer ip: " + ansIp.toString().substring(1));
                 }
+                byte[] buf = messageOut.toWire();
+                response = new DatagramPacket(buf, buf.length);
             }
-            byte[] buf = messageOut.toWire();
-            DatagramPacket response = new DatagramPacket(buf, buf.length, srcIp, sourcePort);
+            response.setAddress(srcIp);
+            response.setPort(srcPort);
             try {
                 socket.send(response);
             } catch (IOException e) {
