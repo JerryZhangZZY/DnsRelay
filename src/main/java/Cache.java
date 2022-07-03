@@ -78,10 +78,10 @@ public class Cache {
         readCacheFromFile();
     }
 
-    public void flushCacheFile() {
+    public void flushCacheFile(int limit) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
         Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, -48);
+        calendar.set(Calendar.HOUR_OF_DAY, -limit * 24);
         Date expireDate = calendar.getTime();
         String newCache = "";
         synchronized (cacheLock) {

@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Sever {
 
+    // default settings
     static boolean useCache = true;
     static int cacheLimitInDays = 2;
     static int threadPoolSize = 10;
@@ -64,10 +65,10 @@ public class Sever {
         ScheduledExecutorService executorService =
                 Executors.newScheduledThreadPool(1);
         executorService.scheduleAtFixedRate(() -> {
-            cache.flushCacheFile();
+            cache.flushCacheFile(cacheLimitInDays);
             log.addLog("dns cache flushed and loaded");
             log.writeLog();
-        }, 0, cacheLimitInDays, TimeUnit.DAYS);
+        }, 0, 1, TimeUnit.DAYS);
 
         // wait for cache loaded
         try {
