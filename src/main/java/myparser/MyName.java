@@ -1,4 +1,4 @@
-package myDNS;
+package myparser;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -174,14 +174,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         }
     }
 
-    /**
-     * Create a new name from a string and an origin. This does not automatically make the name
-     * absolute; it will be absolute if it has a trailing dot or an absolute origin is appended.
-     *
-     * @param s The string to be converted
-     * @param origin If the name is not absolute, the origin to be appended.
-     * @throws IOException The name is invalid.
-     */
     public MyName(String s, MyName origin) throws IOException {
         switch (s) {
             case "":
@@ -273,15 +265,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         }
     }
 
-    /**
-     * Create a new name from a string and an origin. This does not automatically make the name
-     * absolute; it will be absolute if it has a trailing dot or an absolute origin is appended. This
-     * is identical to the constructor, except that it will avoid creating new objects in some cases.
-     *
-     * @param s The string to be converted
-     * @param origin If the name is not absolute, the origin to be appended.
-     * @throws IOException The name is invalid.
-     */
     public static MyName fromString(String s, MyName origin) throws IOException {
         if (s.equals("@")) {
             return origin != null ? origin : empty;
@@ -292,25 +275,10 @@ public class MyName implements Comparable<MyName>, Serializable {
         return new MyName(s, origin);
     }
 
-    /**
-     * Create a new name from a string. This does not automatically make the name absolute; it will be
-     * absolute if it has a trailing dot. This is identical to the constructor, except that it will
-     * avoid creating new objects in some cases.
-     *
-     * @param s The string to be converted
-     * @throws IOException The name is invalid.
-     */
     public static MyName fromString(String s) throws IOException {
         return fromString(s, null);
     }
 
-    /**
-     * Create a new name from a constant string. This should only be used when the name is known to be
-     * good - that is, when it is constant.
-     *
-     * @param s The string to be converted
-     * @throws IllegalArgumentException The name is invalid.
-     */
     public static MyName fromConstantString(String s) {
         try {
             return fromString(s, null);
@@ -319,12 +287,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         }
     }
 
-    /**
-     * Create a new name from DNS a wire format message
-     *
-     * @param in A stream containing the DNS message which is currently positioned at the start of the
-     *     name to be read.
-     */
     public MyName(MyDnsInput in) throws IOException {
         int len;
         int pos;
@@ -369,12 +331,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         }
     }
 
-    /**
-     * Create a new name by removing labels from the beginning of an existing MyName
-     *
-     * @param src An existing MyName
-     * @param n The number of labels to remove from the beginning in the copy
-     */
     public MyName(MyName src, int n) {
         if (n > src.labels) {
             throw new IllegalArgumentException("attempted to remove too many labels");
@@ -392,15 +348,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         }
     }
 
-    /**
-     * Creates a new name by concatenating two existing names. If the {@code prefix} name is absolute
-     * {@code prefix} is returned unmodified.
-     *
-     * @param prefix The prefix name. Must be relative.
-     * @param suffix The suffix name.
-     * @return The concatenated name.
-     * @throws IOException The name is too long.
-     */
     public static MyName concatenate(MyName prefix, MyName suffix) throws IOException {
         if (prefix.isAbsolute()) {
             return prefix;
@@ -411,13 +358,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         return newname;
     }
 
-    /**
-     * If this name is a subdomain of origin, return a new name relative to origin with the same
-     * value. Otherwise, return the existing name.
-     *
-     * @param origin The origin to remove.
-     * @return The possibly relativized name.
-     */
     public MyName relativize(MyName origin) {
         if (origin == null || !subdomain(origin)) {
             return this;
@@ -431,11 +371,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         return newname;
     }
 
-    /**
-     * Generates a new MyName with the first n labels replaced by a wildcard
-     *
-     * @return The wildcard name
-     */
     public MyName wild(int n) {
         if (n < 1) {
             throw new IllegalArgumentException("must replace 1 or more labels");
@@ -450,15 +385,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         }
     }
 
-    /** Is this name a wildcard? */
-    public boolean isWild() {
-        if (labels == 0) {
-            return false;
-        }
-        return name[0] == (byte) 1 && name[1] == (byte) '*';
-    }
-
-    /** Is this name absolute? */
     public boolean isAbsolute() {
         if (labels == 0) {
             return false;
@@ -466,7 +392,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         return name[offset(labels - 1)] == 0;
     }
 
-    /** The length of the name (in bytes). */
     public short length() {
         if (labels == 0) {
             return 0;
@@ -474,12 +399,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         return (short) (name.length);
     }
 
-    /** The number of labels in the name. */
-    public int labels() {
-        return labels;
-    }
-
-    /** Is the current MyName a subdomain of the specified name? */
     public boolean subdomain(MyName domain) {
         int dlabels = domain.labels;
         if (dlabels > labels) {
@@ -515,12 +434,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         return sb.toString();
     }
 
-    /**
-     * Convert a MyName to a String
-     *
-     * @param omitFinalDot If true, and the name is absolute, omit the final dot.
-     * @return The representation of this name as a (printable) String.
-     */
     public String toString(boolean omitFinalDot) {
         if (labels == 0) {
             return "@";
@@ -545,33 +458,16 @@ public class MyName implements Comparable<MyName>, Serializable {
         return sb.toString();
     }
 
-    /**
-     * Convert a MyName to a String
-     *
-     * @return The representation of this name as a (printable) String.
-     */
     @Override
     public String toString() {
         return toString(false);
     }
 
-    /**
-     * Convert the nth label in a MyName to a String
-     *
-     * @param n The label to be converted to a (printable) String. The first label is 0.
-     */
     public String getLabelString(int n) {
         int pos = offset(n);
         return byteString(name, pos);
     }
 
-    /**
-     * Emit a MyName in DNS wire format
-     *
-     * @param out The output stream containing the DNS message.
-     * @param c The compression context, or null of no compression is desired.
-     * @throws IllegalArgumentException The name is not absolute.
-     */
     public void toWire(MyDnsOutput out, MyCompression c) {
         if (!isAbsolute()) {
             throw new IllegalArgumentException("toWire() called on non-absolute name");
@@ -603,21 +499,11 @@ public class MyName implements Comparable<MyName>, Serializable {
         out.writeU8(0);
     }
 
-    /**
-     * Emit a MyName in canonical DNS wire format (all lowercase)
-     *
-     * @param out The output stream to which the message is written.
-     */
     public void toWireCanonical(MyDnsOutput out) {
         byte[] b = toWireCanonical();
         out.writeByteArray(b);
     }
 
-    /**
-     * Emit a MyName in canonical DNS wire format (all lowercase)
-     *
-     * @return The canonical form of the name.
-     */
     public byte[] toWireCanonical() {
         if (labels == 0) {
             return new byte[0];
@@ -633,14 +519,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         return b;
     }
 
-    /**
-     * Emit a MyName in DNS wire format
-     *
-     * @param out The output stream containing the DNS message.
-     * @param c The compression context, or null of no compression is desired.
-     * @param canonical If true, emit the name in canonicalized form (all lowercase).
-     * @throws IllegalArgumentException The name is not absolute.
-     */
     public void toWire(MyDnsOutput out, MyCompression c, boolean canonical) {
         if (canonical) {
             toWireCanonical(out);
@@ -665,7 +543,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         return true;
     }
 
-    /** Are these two MyNames equivalent? */
     @Override
     public boolean equals(Object arg) {
         if (arg == this) {
@@ -684,7 +561,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         return equals(other.name, 0);
     }
 
-    /** Computes a hashcode based on the value */
     @Override
     public int hashCode() {
         if (hashcode != 0) {
@@ -698,15 +574,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         return hashcode;
     }
 
-    /**
-     * Compares this MyName to another Object.
-     *
-     * @param arg The name to be compared.
-     * @return The value 0 if the argument is a name equivalent to this name; a value less than 0 if
-     *     the argument is less than this name in the canonical ordering, and a value greater than 0
-     *     if the argument is greater than this name in the canonical ordering.
-     * @throws ClassCastException if the argument is not a MyName.
-     */
     @Override
     public int compareTo(MyName arg) {
         if (this == arg) {

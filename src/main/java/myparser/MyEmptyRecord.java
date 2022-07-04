@@ -1,4 +1,4 @@
-package myDNS;
+package myparser;
 
 public class MyEmptyRecord extends MyRecord{
         MyEmptyRecord() {}
@@ -7,6 +7,5 @@ public class MyEmptyRecord extends MyRecord{
         protected void rrFromWire(MyDnsInput in) {}
 
         @Override
-        protected void rrToWire(MyDnsOutput out, MyCompression c, boolean canonical) {}
-
+        protected void rrToWire(MyDnsOutput out) {}
 }

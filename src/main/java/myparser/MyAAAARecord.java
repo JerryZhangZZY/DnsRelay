@@ -1,4 +1,4 @@
-package myDNS;
+package myparser;
 
 
 import java.io.IOException;
@@ -10,11 +10,6 @@ public class MyAAAARecord extends MyRecord{
 
     MyAAAARecord() {}
 
-    /**
-     * Creates an AAAA Record from the given data
-     *
-     * @param address The address suffix
-     */
     public MyAAAARecord(MyName name, int dclass, long ttl, InetAddress address) {
         super(name, MyType.AAAA, dclass, ttl);
         if (MyAddress.familyOf(address) != MyAddress.IPv4 && MyAddress.familyOf(address) != MyAddress.IPv6) {
@@ -29,11 +24,10 @@ public class MyAAAARecord extends MyRecord{
     }
 
     @Override
-    protected void rrToWire(MyDnsOutput out, MyCompression c, boolean canonical) {
+    protected void rrToWire(MyDnsOutput out) {
         out.writeByteArray(address);
     }
 
-    /** Returns the address */
     public InetAddress getAddress() {
         try {
             if (name == null) {

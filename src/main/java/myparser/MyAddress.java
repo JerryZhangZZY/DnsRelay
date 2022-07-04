@@ -1,4 +1,4 @@
-package myDNS;
+package myparser;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -11,12 +11,6 @@ public class MyAddress {
 
     private MyAddress() {}
 
-    /**
-     * Returns the family of an InetAddress.
-     *
-     * @param address The supplied address.
-     * @return The family, either IPv4 or IPv6.
-     */
     public static int familyOf(InetAddress address) {
         if (address instanceof Inet4Address) {
             return IPv4;
@@ -26,5 +20,4 @@ public class MyAddress {
         }
         throw new IllegalArgumentException("unknown address family");
     }
-
 }

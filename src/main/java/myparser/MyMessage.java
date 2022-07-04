@@ -1,4 +1,4 @@
-package myDNS;
+package myparser;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -6,19 +6,16 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class MyMessage implements Cloneable{
+public class MyMessage implements Cloneable {
     private MyHeader header;
     private List<MyRecord>[] sections;  //0:question, 1:answer, 2:authority, 3:addition
     private int size;
 
     public MyMessage(byte[] b) throws IOException {
         MyDnsInput in = new MyDnsInput(b);
-
         MyHeader header = new MyHeader(in);
-
         sections = new List[4];
         this.header = header;
-
         boolean isUpdate = header.getOpcode() == 5;
         boolean truncated = header.getFlag(6);
         try {
@@ -69,14 +66,13 @@ public class MyMessage implements Cloneable{
         sections[section].add(r);
     }
 
-    public byte[] toWire(){//usage:                     byte[] relayBuf = messageIn.toWire();
-
-
+    public byte[] toWire() {
         MyDnsOutput out = new MyDnsOutput();
         toWire(out);
         size = out.current();
         return out.toByteArray();
     }
+
     void toWire(MyDnsOutput out) {
         header.toWire(out);
         MyCompression c = new MyCompression();
@@ -89,6 +85,7 @@ public class MyMessage implements Cloneable{
             }
         }
     }
+
     @Override
     public MyMessage clone() {
         MyMessage m = null;

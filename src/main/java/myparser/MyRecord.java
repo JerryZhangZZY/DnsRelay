@@ -1,4 +1,4 @@
-package myDNS;
+package myparser;
 
 
 import java.io.IOException;
@@ -14,25 +14,24 @@ public abstract class MyRecord {
         return name;
     }
 
-    /**
-     * Returns the record's type
-     *
-     */
     public int getType() {
         return type;
     }
 
-    /** Returns the record's class */
     public int getDClass() {
         return dclass;
     }
-    protected MyRecord() {}
+
+    protected MyRecord() {
+    }
+
     protected MyRecord(MyName name, int type, int dclass, long ttl) {
         this.name = name;
         this.type = type;
         this.dclass = dclass;
         this.ttl = ttl;
     }
+
     static MyRecord fromWire(MyDnsInput in, int section, boolean isUpdate) throws IOException {
         int type;
         int dclass;
@@ -57,31 +56,27 @@ public abstract class MyRecord {
         rec = newRecord(name, type, dclass, ttl, length, in);
         return rec;
     }
+
     public static MyRecord newRecord(MyName name, int type, int dclass) {
         return newRecord(name, type, dclass, 0);
     }
+
     public static MyRecord newRecord(MyName name, int type, int dclass, long ttl) {
         return getEmptyRecord(name, type, dclass, ttl, false);
     }
+
     private static MyRecord newRecord(
             MyName name, int type, int dclass, long ttl, int length, MyDnsInput in) throws IOException {
         MyRecord rec;
         rec = getEmptyRecord(name, type, dclass, ttl, in != null);
         if (in != null) {
-            if (in.remaining() < length) {
-//                throw new IOException("truncated record");
-            }
-//            in.setActive(length);
-
+            in.remaining();
             rec.rrFromWire(in);
-
-            if (in.remaining() > 0) {
-//                throw new IOException("invalid record length");
-            }
-//            in.clearActive();
+            in.remaining();
         }
         return rec;
     }
+
     private static MyRecord getEmptyRecord(MyName name, int type, int dclass, long ttl, boolean hasData) {
         MyRecord rec;
         if (hasData) {
@@ -99,8 +94,11 @@ public abstract class MyRecord {
         rec.ttl = ttl;
         return rec;
     }
+
     protected abstract void rrFromWire(MyDnsInput in) throws IOException;
-    protected abstract void rrToWire(MyDnsOutput out, MyCompression c, boolean canonical);
+
+    protected abstract void rrToWire(MyDnsOutput out);
+
     void toWire(MyDnsOutput out, int section, MyCompression c) {
         name.toWire(out, c);
         out.writeU16(type);
@@ -111,7 +109,7 @@ public abstract class MyRecord {
         out.writeU32(ttl);
         int lengthPosition = out.current();
         out.writeU16(0); /* until we know better */
-        rrToWire(out, c, false);
+        rrToWire(out);
         int rrlength = out.current() - lengthPosition - 2;
         out.writeU16At(rrlength, lengthPosition);
     }

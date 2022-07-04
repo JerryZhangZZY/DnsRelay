@@ -1,4 +1,4 @@
-package myDNS;
+package myparser;
 
 
 import java.io.IOException;
@@ -26,11 +26,6 @@ public class MyARecord extends MyRecord{
         return bytes;
     }
 
-    /**
-     * Creates an A Record from the given data
-     *
-     * @param address The address that the name refers to
-     */
     public MyARecord(MyName name, int dclass, long ttl, InetAddress address) {
         super(name, MyType.A, dclass, ttl);
         if (MyAddress.familyOf(address) != MyAddress.IPv4) {
@@ -45,11 +40,10 @@ public class MyARecord extends MyRecord{
     }
 
     @Override
-    protected void rrToWire(MyDnsOutput out, MyCompression c, boolean canonical) {
+    protected void rrToWire(MyDnsOutput out) {
         out.writeU32((long) addr & 0xFFFFFFFFL);
     }
 
-    /** Returns the Internet address */
     public InetAddress getAddress() {
         try {
             if (name == null) {

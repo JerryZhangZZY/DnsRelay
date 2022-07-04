@@ -1,5 +1,5 @@
-import myDNS.MyRecord;
-import myDNS.*;
+import myparser.MyRecord;
+import myparser.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;

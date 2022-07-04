@@ -1,4 +1,4 @@
-package myDNS;
+package myparser;
 
 
 import java.io.IOException;

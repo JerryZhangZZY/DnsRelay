@@ -1,4 +1,4 @@
-package myDNS;
+package myparser;
 
 import java.util.HashMap;
 
@@ -21,13 +21,6 @@ public class MyMnemonic {
     private int max;
     private boolean numericok;
 
-    /**
-     * Creates a new Mnemonic table.
-     *
-     * @param description A short description of the mnemonic to use when
-     * @param wordcase Whether to convert strings into uppercase, lowercase, or leave them unchanged.
-     *     throwing exceptions.
-     */
     public MyMnemonic(String description, int wordcase) {
         this.description = description;
         this.wordcase = wordcase;
@@ -36,22 +29,14 @@ public class MyMnemonic {
         max = Integer.MAX_VALUE;
     }
 
-    /** Sets the maximum numeric value */
     public void setMaximum(int max) {
         this.max = max;
     }
 
-    /** Sets the prefix to use when converting to and from values that don't have mnemonics. */
     public void setPrefix(String prefix) {
         this.prefix = sanitize(prefix);
     }
 
-    /** Sets whether numeric values stored in strings are acceptable. */
-    public void setNumericAllowed(boolean numeric) {
-        this.numericok = numeric;
-    }
-
-    /** Checks that a numeric value is within the range [0..max] */
     public void check(int val) {
         if (val < 0 || val > max) {
             throw new IllegalArgumentException(description + " " + val + " is out of range");
@@ -79,12 +64,6 @@ public class MyMnemonic {
         return -1;
     }
 
-    /**
-     * Defines the text representation of a numeric value.
-     *
-     * @param val The numeric value
-     * @param str The text string
-     */
     public void add(int val, String str) {
         check(val);
         str = sanitize(str);
@@ -92,36 +71,11 @@ public class MyMnemonic {
         values.put(val, str);
     }
 
-    /**
-     * Removes both the numeric value and its text representation, including all aliases.
-     *
-     * @param val The numeric value
-     * @since 3.1
-     */
     public void remove(int val) {
         values.remove(val);
         strings.entrySet().removeIf(entry -> entry.getValue() == val);
     }
 
-    /**
-     * Defines an additional text representation of a numeric value. This will be used by getValue(),
-     * but not getText().
-     *
-     * @param val The numeric value
-     * @param str The text string
-     */
-    public void addAlias(int val, String str) {
-        check(val);
-        str = sanitize(str);
-        strings.put(str, val);
-    }
-
-    /**
-     * Gets the text mnemonic corresponding to a numeric value.
-     *
-     * @param val The numeric value
-     * @return The corresponding text mnemonic.
-     */
     public String getText(int val) {
         check(val);
         String str = values.get(val);
@@ -135,12 +89,6 @@ public class MyMnemonic {
         return str;
     }
 
-    /**
-     * Gets the numeric value corresponding to a text mnemonic.
-     *
-     * @param str The text mnemonic
-     * @return The corresponding numeric value, or -1 if there is none
-     */
     public int getValue(String str) {
         str = sanitize(str);
         Integer value = strings.get(str);

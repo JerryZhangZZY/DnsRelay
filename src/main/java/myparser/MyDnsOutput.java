@@ -1,4 +1,4 @@
-package myDNS;
+package myparser;
 
 import java.io.IOException;
 
@@ -30,11 +30,6 @@ public class MyDnsOutput {
         array[pos++] = (byte) (val & 0xFF);
     }
 
-    /**
-     * Writes an unsigned 16 bit value to the stream.
-     *
-     * @param val The value to be written
-     */
     public void writeU16(int val) {
         check(val, 16);
         need(2);
@@ -42,12 +37,6 @@ public class MyDnsOutput {
         array[pos++] = (byte) (val & 0xFF);
     }
 
-    /**
-     * Writes an unsigned 16 bit value to the specified position in the stream.
-     *
-     * @param val The value to be written
-     * @param where The position to write the value.
-     */
     public void writeU16At(int val, int where) {
         check(val, 16);
         if (where > pos - 2) {
@@ -57,11 +46,6 @@ public class MyDnsOutput {
         array[where++] = (byte) (val & 0xFF);
     }
 
-    /**
-     * Writes an unsigned 32 bit value to the stream.
-     *
-     * @param val The value to be written
-     */
     public void writeU32(long val) {
         check(val, 32);
         need(4);
