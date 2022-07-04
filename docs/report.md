@@ -510,7 +510,7 @@ ansIp = ips.get(new Random().nextInt(ips.size()));
 
 Up to now, the address of the queried domain is obtained, either by retrieving in the local DNS cache or querying the remote DNS server.
 
-If not in the blacklist (the program compares the address with `0.0.0.0` and `::`), the address is encapsulated in a response packet, and send back to the original socket.
+If not in the blacklist (the program compares the address with [0.0.0.0](0.0.0.0) and [::](::)), the address is encapsulated in a response packet, and send back to the original socket.
 
 ```java
 //prepare answer
@@ -654,7 +654,7 @@ executorService.scheduleAtFixedRate(() -> {
 
 The project enables several settings, including `use-cache`, `cache-limit-in-days`, `thread-pool-size`, and `remote-dns-server`.
 
-Users can decide if they want to use local caching or always query the remote DNS server, and decide how long the cache records are saved in the cache file. They can use larger thread pool size to support more traffic, or use a smaller one to reduce memory and CPU burden. And users can decide the address of the remote DNS server used by the resolver. For example, for users at BUPT campus, they can set the address as `10.3.9.44` to use DNS server provided by BUPT. 
+Users can decide if they want to use local caching or always query the remote DNS server, and decide how long the cache records are saved in the cache file. They can use larger thread pool size to support more traffic, or use a smaller one to reduce memory and CPU burden. And users can decide the address of the remote DNS server used by the resolver. For example, for users at BUPT campus, they can set the address as [10.3.9.44](10.3.9.44) to use DNS server provided by BUPT. 
 
 This configuration module is supported by Java `Properties` class, and the implementation is as following.
 
