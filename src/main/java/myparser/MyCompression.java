@@ -35,7 +35,6 @@ public class MyCompression {
                 pos = entry.pos;
             }
         }
-
         return pos;
     }
 }
