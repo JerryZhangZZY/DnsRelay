@@ -734,6 +734,5 @@ The DNS relay program is capable of handling various DNS query requests. On ente
 - Blacklist can be separate from cache so that it can be maintained more conveniently
 - Log can be clearable in case the file is very large
 - Cache size limit can be used to restrain memory usage
-- Request receiving can use a queue to deal with enormous traffic (, which is unlikely to happen on localhost but would be useful is deployed as a public remote DNS server).
+- Request receiving can use `BlockingQueue` Interface to deal with enormous traffic (, which is unlikely to happen on localhost but would be useful is deployed as a public remote DNS server). 
 
-- [ ] more specific
