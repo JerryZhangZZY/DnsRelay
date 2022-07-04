@@ -8,7 +8,7 @@ import java.util.*;
 public class Cache {
     private final String path = "cache.txt";
     private final File cacheFile;
-    private Map<String, String[]> cache;
+    private final Map<String, String[]> cache;
     private final Object cacheLock = new Object();
 
     public Cache() {
@@ -55,7 +55,7 @@ public class Cache {
 
     public void addCacheToFile(String domain, ArrayList<InetAddress> ips) {
         synchronized (cacheLock) {
-            BufferedWriter bw = null;
+            BufferedWriter bw;
             try {
                 bw = new BufferedWriter(new FileWriter(cacheFile, true));
             } catch (IOException e) {
