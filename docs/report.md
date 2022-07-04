@@ -87,7 +87,7 @@ D --> |response| B
 
 <center><b><font size ='2'>Figure 2. Functional modules</font></b></center></font>
 
-Client first send an capsulate UDP datagram request to the resolver. The resolver decapsulate it and check if the request domain is cached. If the result is found in cache, then encapsulate it into the packet and send it back to the client. Otherwise, it should relay the request to the remote DNS server, then pass the server's response back to the client. Note that this is just the basic structure of DNS relay which only add a function of local caching.
+Client first sends an capsulate UDP datagram request to the resolver. The resolver decapsulates the request and checks if the request domain is cached. If the result is found in cache, it encapsulates the result into a packet and sends it back to the client. Otherwise, it should relay the request to the remote DNS server, and then pass the server's response back to the client. Note that this is just the basic structure of DNS relay which only add a function of local caching.
 
 #### 2.1.3. DNS Datagram
 
@@ -159,7 +159,7 @@ We only need to fill the **RDLENGTH** and **RDATA** in the response packet while
 
 #### 2.1.4. Possible Datagram
 
-We use **Wireshark** to capture the possible DNS datagram during the whole process. This is very instructive for the DNS relay design and implementation.
+We use **Wireshark** to capture the possible DNS datagram during the whole process. This is very enlightening for us to design and implement the DNS relay.
 
 First use `nslookup` command to request [www.google.com](www.google.com). It returns both an IPv4 address and an IPv6 address(*Figure 6*).
 
@@ -226,7 +226,7 @@ And we found that both type A and type AAAA response have no **Answers** section
 
 #### 2.2.5. Blacklist with Expiry Time
 
-- If the returned address is [0.0.0.0](0.0.0.0) or [::](::), then the requested domain is in **blacklist**. The program will set the **RCODE** to 3<sub>d</sub> and send the response.
+- If the returned address is [0.0.0.0](0.0.0.0) (for IPv4) or [::](::) (for IPv6), then the requested domain is in **blacklist**. The program will set the **RCODE** to 3<sub>d</sub> and send the response.
 - Set the **timestamp** to a chosen date and the cache **cleaning** service will delete 
 
 #### 2.2.6. Configurable remote DNS server
@@ -280,7 +280,7 @@ C --- B3
 
 ### 2.4. Overall Flow
 
-Below you can see the major **work flow** of our relay system(cache cleaning module excluded). For detailed description see [Module Design](#3. Module Design) right behind.
+Below you can see the major **work flow** of our relay system(cache cleaning module excluded). For detailed description see [Module Design](#3. Module Design) right below.
 
 ```mermaid
 flowchart TB
@@ -316,6 +316,83 @@ st-->1-->2-->3-->4-->2
 
 ## 3. Module Design
 
+### 3.1 Request Receiving Module
+
+First prepare a packet with buffer to store the request received later.
+
+```java
+byte[] buf = new byte[1024];
+DatagramPacket request = new DatagramPacket(buf, buf.length);
+```
+
+DNS Protocol uses port 53 to transfer data, so we need to create a socket and bind it to port 53 to receive the packet.
+
+```java
+DatagramSocket socket;
+try {
+    socket = new DatagramSocket(53);
+} catch (SocketException e) {
+    throw new RuntimeException(e);
+}
+```
+
+When a request is send to the socket, we can get it by:
+
+```java
+try {
+    socket.receive(request);
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+And if there is no traffic, the thread will be blocked at `DatagramSocket.receive()`. 
+
+The `receive()` method runs infinitely in a while loop without handling the request to boost performance. And requests are handled by child threads from a pool with our request handler.
+
+```java
+pool.execute(new Handler(request, socket, cache, new Log(), remoteDnsServer, useCache));
+```
+
+The workflow of this part can be understood as below.
+
+```mermaid
+flowchart TB
+
+st([Program Starts])
+1[Prepare a Empty Request]
+2[Create a Socket]
+3[Bind the Socket to Port 53]
+4[Block at Receive]
+5[Receive Request]
+6[Pick a New Thread from Thread Pool]
+7([to Request Handling Module])
+
+st-->1-->2-->3-->4-->5-->6-->4
+6-->7
+
+11[/Client Socket/]
+12[/Send/]
+
+11-->12
+12-..->5
+
+```
+
+### 3.2 Request Handling Module
+
+
+
+#### 3.2.1 Resolver Module
+
+#### 3.2.2 Log Module
+
+#### 3.2.3 Cache Module
+
+### 3.3 Cache Cleaning Mudule
+
+### 3.4 Configuration Module
+
 ## 4. Testing & Results
 
 ## 5. Summary & Future Improvement
@@ -329,3 +406,4 @@ The DNS relay program is capable of handling various DNS query requests. On ente
 - Blacklist can be separate from cache so that it can be maintained more conveniently
 - Log can be clearable in case the file is very large
 - Cache size limit can be used to restrain memory usage
+- Request receiving can use a queue to deal with enormous traffic (, which is unlikely to happen on localhost but would be useful is deployed as a public remote DNS server).
