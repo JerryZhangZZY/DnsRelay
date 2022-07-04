@@ -2,40 +2,55 @@
 
 > Project of BUPT IoT 2022 junior summer school.
 
-## Pro Feature
+## Features
 
-- IPv6 support
-- Flow control
-- Blacklist with expiry time
-- Configurable remote DNS server
-- Configurable cache usage
-- Configurable multithreading
-- Configurable cache auto-cleaning
-- Log file for recording all behaviour in detail
+### Basic Functions
+
+- Supports all DNS request types
+- Caching mechanism
+- Multi-threaded concurrent handling of requests
+- Customizable blacklist
+
+### Advanced Features
+
+- Support IPv6 address
+- DNS load balancing
+- Auto cache cleaning
+- Blacklist expiry time
+- Server logs
+- User configuration
+  - Customizable remote DNS server address
+  - Enable/disable caching mechanism
+  - Customizable thread pool size
+  - Customizable cache validity period
+
+## Environment requirements
+
+Java 15 or higher
 
 ## How To Use
 
 ### Boot settings
 
-Customize your settings in **_boot.properties_**.
+Customize your settings in [**boot.properties**](boot.properties).
 
 ### Add blacklist
 
-Add websites to **_cache.txt_** as follows:
+Add websites to [**cache.txt**](cache.txt) as follows:
 
 ```text
 blacklist [website you want to block]. 0.0.0.0
 blacklist [website you want to block].-v6 ::
 ```
 
-If you want to set expire time, here's an example:
+If you want to set expiry time, here's an example:
 
 ```text
 2022/07/02 www.taobao.com. 0.0.0.0
 2022/07/02 www.taobao.com.-v6 ::
 ```
 
-Assume the cache limit is set to 2 days. Then the server will block _www.taobao.com_ until 2022/07/04.
+Assume the cache limit is set to 2 days. Then the server will block [www.taobao.com](www.taobao.com) until 2022/07/04.
 
 ### Start server and test
 
@@ -47,11 +62,11 @@ Then create a new terminal window and execute:
 nslookup www.bupt.edu.cn 127.0.0.1
 ```
 
-The server should return both ipv4 and ipv6 addresses(ipv6 protocol enabled).
+The server should return both IPv4 and IPv6 addresses(ipv6 protocol enabled).
 
 ### Set as default
 
-Now you can set your local dns server as 127.0.0.1(ipv4) and ::1(ipv6).
+Now you can set your local DNS server as 127.0.0.1(ipv4) and ::1(ipv6).
 
 ### Log
 
