@@ -679,7 +679,49 @@ remote-dns-server=114.114.114.114
 
 ## 4. Testing & Results
 
+### 4.1 Using `nslookup`
 
+First of all, execute the DNS relay program. Then enter `nslookup example.com 127.0.0.1` in  `cmd`. Some examples are listed below.
+
+- Querying `www.google.com`, which support both IPv4 and IPv6:
+
+![](report images/7.png)
+
+- Querying `byt.pt`, a pure IPv6 website:
+
+![](report images/8.png)
+
+- Querying a non-exist domain, whose address should not be found:
+
+![](report images/9.png)
+
+- The relay program support all kinds of question type, say type MX:
+
+![](report images/10.png)
+
+Domains in the blacklist are disabled. For example, we can set Google as `0.0.0.0` and `::`, and try to query it.
+
+![](report images/11.png)
+
+![](report images/12.png)
+
+### 4.2 Using Browser
+
+To use this DNS relay with browser, users need to configure their network settings.
+
+![](report images/13.png)
+
+![](report images/14.png)
+
+And then start the relay program and surf the Internet with browser. The operations of this DNS relay can be seen in the log file.
+
+![](report images/15.png)
+
+Using a web browser is quite different from simply using `nslookup` to test the DNS relay program, because webpages are complicated and often send a large number of "strange" request, just like the "passport.bigfun.cn" in the figure above. This is in essence challenging but our DNS relay can handle it very well.
+
+4.3 Using Wireshark
+
+Capturing message on port 53, we can see the packet format and content is completely same with or without our DNS relay. This means our program is highly transparent.
 
 ## 5. Summary & Future Improvement
 
