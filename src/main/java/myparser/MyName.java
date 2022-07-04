@@ -5,47 +5,22 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 public class MyName implements Comparable<MyName>, Serializable {
-
     private static final long serialVersionUID = -6036624806201621219L;
-
     private static final int LABEL_NORMAL = 0;
     private static final int LABEL_COMPRESSION = 0xC0;
     private static final int LABEL_MASK = 0xC0;
-
-    /* The name data */
     private byte[] name;
-
-    /* Effectively an 8 byte array, where the bytes store per-label offsets. */
     private long offsets;
-
-    /* Precomputed hashcode. */
     private transient int hashcode;
-
-    /* The number of labels in this name. */
     private int labels;
-
-    private static final byte[] emptyLabel = new byte[] {(byte) 0};
-    private static final byte[] wildLabel = new byte[] {(byte) 1, (byte) '*'};
-
-    /** The root name */
+    private static final byte[] emptyLabel = new byte[]{(byte) 0};
+    private static final byte[] wildLabel = new byte[]{(byte) 1, (byte) '*'};
     public static final MyName root;
-
-    /** The root name */
     public static final MyName empty;
-
-    /** The maximum length of a MyName */
     private static final int MAXNAME = 255;
-
-    /** The maximum length of a label a MyName */
     private static final int MAXLABEL = 63;
-
-    /** The maximum number of cached offsets, the first offset (always zero) is not stored. */
     private static final int MAXOFFSETS = 9;
-
-    /* Used to efficiently convert bytes to lowercase */
     private static final byte[] lowercase = new byte[256];
-
-    /* Used in wildcard names. */
     private static final MyName wild;
 
     static {
@@ -66,7 +41,8 @@ public class MyName implements Comparable<MyName>, Serializable {
         wild.labels = 1;
     }
 
-    private MyName() {}
+    private MyName() {
+    }
 
     private void setoffset(int n, int offset) {
         if (n == 0 || n >= MAXOFFSETS) {
@@ -255,11 +231,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         if (origin != null && !absolute) {
             appendFromString(s, origin.name, origin.labels);
         }
-        // A relative name that is MAXNAME octets long is a strange and wonderful thing.
-        // Not technically in violation, but it can not be used for queries as it needs
-        // to be made absolute by appending at the very least the empty label at the
-        // end, which there is no room for. To make life easier for everyone, let's only
-        // allow MyNames that are MAXNAME long if they are absolute.
         if (!absolute && length() == MAXNAME) {
             throw new IOException(s);
         }
@@ -348,43 +319,6 @@ public class MyName implements Comparable<MyName>, Serializable {
         }
     }
 
-    public static MyName concatenate(MyName prefix, MyName suffix) throws IOException {
-        if (prefix.isAbsolute()) {
-            return prefix;
-        }
-        MyName newname = new MyName();
-        newname.append(prefix.name, 0, prefix.labels);
-        newname.append(suffix.name, 0, suffix.labels);
-        return newname;
-    }
-
-    public MyName relativize(MyName origin) {
-        if (origin == null || !subdomain(origin)) {
-            return this;
-        }
-        MyName newname = new MyName();
-        int length = length() - origin.length();
-        newname.labels = labels - origin.labels;
-        newname.offsets = offsets;
-        newname.name = new byte[length];
-        System.arraycopy(name, 0, newname.name, 0, length);
-        return newname;
-    }
-
-    public MyName wild(int n) {
-        if (n < 1) {
-            throw new IllegalArgumentException("must replace 1 or more labels");
-        }
-        try {
-            MyName newname = new MyName();
-            copy(wild, newname);
-            newname.append(name, offset(n), labels - n);
-            return newname;
-        } catch (IOException e) {
-            throw new IllegalStateException("MyName.wild: concatenate failed");
-        }
-    }
-
     public boolean isAbsolute() {
         if (labels == 0) {
             return false;
@@ -461,11 +395,6 @@ public class MyName implements Comparable<MyName>, Serializable {
     @Override
     public String toString() {
         return toString(false);
-    }
-
-    public String getLabelString(int n) {
-        int pos = offset(n);
-        return byteString(name, pos);
     }
 
     public void toWire(MyDnsOutput out, MyCompression c) {
