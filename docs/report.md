@@ -821,6 +821,10 @@ Using a web browser is quite different from simply using `nslookup` to test the 
 
 Capturing message on port 53, we can see the packet format and content is completely same with or without our DNS relay. This means our program is highly **transparent** to the client.
 
+### 4.4 Testing in Real
+
+After setting the DNS relay as our default DNS server, we conducted **real-world testing** that accumulated over **10 hours**. Finally, our server successfully passed the test with **no errors**. By checking the logs, we found that the server handled a variety of DNS requests during this period, including **web authentication**, **email updates**, **Windows system update checks**, and more. We are very happy to see that our server is capable of **practical application**.
+
 ## 5. Summary & Future Improvement
 
 ### 5.1. Summary
