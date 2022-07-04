@@ -578,6 +578,79 @@ b-->|If of other types|14
 
 In this flow chart, cache and blacklist functions are assumed enabled.
 
+##### 3.2.1.4 DNS Parser
+
+The DNS resolver is supported by a parser package, which has classes to represent DNS components.
+
+Some major classes in this package are `MyMessage`, `MyHeader`, and `MyRecord`.
+
+`MyMessage` class represents the DNS message. It has `header` and `sections` as its fields. And this class implement methods like`getQuestion` and `addRecord`.
+
+```java
+public class MyMessage implements Cloneable {
+    private MyHeader header;
+    private List<MyRecord>[] sections;  //0:question, 1:answer, 2:authority, 3:addition
+    private int size;
+	//...
+    public MyRecord getQuestion() {
+        List<MyRecord> l = sections[0];
+        if (l == null || l.isEmpty()) {
+            return null;
+        }
+        return l.get(0);
+    }
+    public void addRecord(MyRecord r, int section) {
+        if (sections[section] == null) {
+            sections[section] = new LinkedList<>();
+        }
+        header.increaseCount(section);
+        sections[section].add(r);
+    }
+}
+```
+
+`MyHeader` class represents the header of a DNS message. It fields contains `id`, `flags`, and `counts`. Some important methods include `setRcode` and `getFlag`.
+
+```java
+public class MyHeader implements Cloneable{
+    private int id;
+    private int flags;
+    private int[] counts;
+	//...
+    public void setRcode(int value) {
+        if (value < 0 || value > 0xF) {
+            throw new IllegalArgumentException("DNS Rcode " + value + " is out of range");
+        }
+        flags &= ~0xF;
+        flags |= value;
+    }
+    public boolean getFlag(int bit) {
+        return (flags & (1 << (15 - bit))) != 0;
+    }
+}
+```
+
+`MyRecord` is another class that is often used in this project. It represents DNS message section. This class is often used as its subclasses, `MyARecord` and `MyAAAARecord`. 
+
+```java
+public abstract class MyRecord {
+    protected MyName name;
+    protected int type;
+    protected int dclass;
+    protected long ttl;
+    public MyName getName() {
+        return name;
+    }
+    public int getType() {
+        return type;
+    }
+    public int getDClass() {
+        return dclass;
+    }
+    //...
+}
+```
+
 #### 3.2.2 Log Module
 
 A log file is used to record connection and operations of the program and provide useful information to expert users. It is basically supported by `Log` class, with `addLog()` method that add log information to the buffer and print them in the terminal, and a `writeLog()` method to flush the buffer into the log file. Each handler thread use a independent log instance and `writeLog()` operation is protected by mutex lock.
