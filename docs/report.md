@@ -574,9 +574,68 @@ In this flow chart, cache and blacklist functions are assumed enabled.
 
 #### 3.2.2 Log Module
 
+A log file is used to record connection and operations of the program and provide useful information to expert users. It is basically supported by `Log` class, with `addLog()` method that add log information to the buffer and print them in the terminal, and a `writeLog()` method to flush the buffer into the log file. Each handler thread use a independent log instance and `writeLog()` operation is protected by mutex lock.
+
+Some usage examples of log function are as following.
+
+```java
+log.addLog("[" + Thread.currentThread().getName() + "] " + "found in cache");
+log.addLog("[" + Thread.currentThread().getName() + "] " + "not in cache");
+log.addLog("[" + Thread.currentThread().getName() + "] " + "in total " + ips.size() + " result(s)");
+log.writeLog();	//at the end of each thread
+```
+
 #### 3.2.3 Cache Module
 
+Local caching is an important feature of this DNS relay program. 
+
+When handling a query, the resolver first tries to retrieve the address in the cache.
+
+```java
+ansIp = cache.getIpFromCache(domain + (useV6 ? "-v6" : ""));
+```
+
+If not found in cache but addresses are queried from remote DNS server, the resolver create a new child thread to store these address and update the cache file.
+
+```java
+Thread update = new Thread(new Runnable() {
+    @Override
+    public void run() {
+        synchronized (cache.getCacheLock()) {
+            if (cache.getIpFromCache(domain + (finalUseV6 ? "-v6" : "")) == null) {
+                cache.addCacheToFile(domain + (finalUseV6 ? "-v6" : ""), ips);
+                log.addLog("[" + parentName + "-child] " + "added to cache file and reloaded cache");
+            }
+        }
+    }
+});
+```
+
+The flow chart of cache module is shown below.
+
+```mermaid
+flowchart TB
+
+st([Request resolved])
+1{Use cache?}
+2[Retrieve domain in cache]
+3{Found in cache?}
+4[Query remote DNS server]
+5[Get answered address]
+6[[Update Cache]]
+nd([Reply to client])
+
+
+st-->1-->|true|2-->3-->|true|nd
+3-->|false|4-->5-->nd
+5-->|Child thread|6
+```
+
+
+
 ### 3.3 Cache Cleaning Module
+
+
 
 ### 3.4 Configuration Module
 
