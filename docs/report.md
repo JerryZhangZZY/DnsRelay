@@ -128,7 +128,7 @@ The header section of DNS datagram is shown in *Figure 3*. ID is randomly genera
 
 ##### 2.1.3.2. DNS Question
 
-*Figure 4* below shows the structure of DNS question section. **QNAME** contains the requested domain. For example, `www.github.com` is represented as `3www6github3com0`. **QTYPE** indicates different question types. *Table 1* shows the QTYPE commonly used. QCLASS = 1 means Internet data.
+*Figure 4* below shows the structure of DNS question section. **QNAME** contains the requested domain. For example, [www.github.com](https://www.github.com) is represented as `3www6github3com0`. **QTYPE** indicates different question types. *Table 1* shows the QTYPE commonly used. QCLASS = 1 means Internet data.
 
 ```
  0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
@@ -154,7 +154,7 @@ The header section of DNS datagram is shown in *Figure 3*. ID is randomly genera
 
 ##### 2.1.3.3. DNS Answer
 
-We only need to fill the **RDLENGTH** and **RDATA** in the response packet while the rest of the sections only need to be simply cloned. For the DNS relay implementation, only **ARecord**s and **AAAARecord**s need to be attached. This should be achieved by simply calling the `addRecord()` function in our parser.
+We only need to fill the **RDLENGTH** and **RDATA** in the response packet while the rest of the sections only need to be simply cloned. For the DNS relay implementation, only **ARecord**s and **AAAARecord**s need to be attached. This should be achieved by simply calling the `addRecord()` function in our [parser](#3.2.1.3 DNS Parser).
 
 ```
   0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
@@ -179,7 +179,7 @@ We only need to fill the **RDLENGTH** and **RDATA** in the response packet while
 
 We use **Wireshark** to capture the possible DNS datagram during the whole process. This is very enlightening for us to design and implement the DNS relay.
 
-First use `nslookup` command to request [www.google.com](www.google.com). It returns both an IPv4 address and an IPv6 address(*Figure 6*).
+First use `nslookup` command to request [www.google.com](https://www.google.com). It returns both an IPv4 address and an IPv6 address(*Figure 6*).
 
 ![1](report images/1.png)
 
@@ -197,7 +197,7 @@ We also tried the IPv6-only website(*Figure 8*). This is similar to IPv4-only.
 
 <center><b><font size ='2'>Figure 9. nslookup Request 2</font></b></center>
 
-Compare the type A response(*Figure 9*) with the previous one, we found that the **flags** are identical but the latest one has no **Answers** section since [byr.pt](byr.pt) is a IPv6-only website.
+Compare the type A response(*Figure 9*) with the previous one, we found that the **flags** are identical but the latest one has no **Answers** section since [byr.pt](https://byr.pt) is a IPv6-only website.
 
 ![4](report images/4.png)
 
@@ -761,13 +761,13 @@ remote-dns-server=114.114.114.114
 
 First of all, execute the DNS relay program. Then enter `nslookup example.com 127.0.0.1` in the terminal. Some examples are listed below.
 
-- Querying [www.google.com](www.google.com), which support both **IPv4** and **IPv6**:
+- Querying [www.google.com](https://www.google.com), which support both **IPv4** and **IPv6**:
 
 ![](report images/7.png)
 
 <center><b><font size ='2'>Figure 18. nslookup - 1</font></b></center>
 
-- Querying [byr.pt](byr.pt), a pure **IPv6** website:
+- Querying [byr.pt](https://byr.pt), a pure **IPv6** website:
 
 ![](report images/8.png)
 
