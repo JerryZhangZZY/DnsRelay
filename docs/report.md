@@ -375,19 +375,19 @@ The workflow of this part can be understood as below.
 ```mermaid
 flowchart TB
 
-st([Program Starts])
-1[Prepare a Empty Request]
-2[Create a Socket]
-3[Bind the Socket to Port 53]
-4[Block at Receive]
-5[Receive Request]
-6[Pick a New Thread from Thread Pool]
+st([Program starts])
+1[Prepare a empty request]
+2[Create a socket]
+3[Bind the socket to port 53]
+4[Block at receive]
+5[Receive request]
+6[Pick a new thread from thread pool]
 7([to Request Handling Module])
 
 st-->1-->2-->3-->4-->5-->6-->4
 6-->7
 
-11[/Client Socket/]
+11[/Client socket/]
 12[/Send/]
 
 11-->12
@@ -635,11 +635,51 @@ st-->1-->|true|2-->3-->|true|nd
 
 ### 3.3 Cache Cleaning Module
 
+The mapping of domains and addresses are subject to change, so the cache must be regularly flushed and updated to keep track with authority records from remote DNS server. This is implemented by using a task scheduler that triggers the cache cleaning task every day to delete cache records before two days.
 
+```java
+ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+executorService.scheduleAtFixedRate(() -> {
+    cache.flushCacheFile(cacheLimitInDays);
+}, 0, 1, TimeUnit.DAYS);
+```
 
 ### 3.4 Configuration Module
 
+The project enables several settings, including `use-cache`, `cache-limit-in-days`, `thread-pool-size`, and `remote-dns-server`.
+
+Users can decide if they want to use local caching or always query the remote DNS server, and decide how long the cache records are saved in the cache file. They can use larger thread pool size to support more traffic, or use a smaller one to reduce memory and CPU burden. And users can decide the address of the remote DNS server used by the resolver. For example, for users at BUPT campus, they can set the address as `10.3.9.44` to use DNS server provided by BUPT. 
+
+This configuration module is supported by Java `Properties` class, and the implementation is as following.
+
+```java
+Properties config = new Properties();
+try {
+    FileInputStream in = new FileInputStream("boot.properties");
+    config.load(in);
+    in.close();
+    useCache = Boolean.parseBoolean(config.getProperty("use-cache", "true"));
+    cacheLimitInDays = Integer.parseInt(config.getProperty("cache-limit-in-days", "2"));
+    threadPoolSize = Integer.parseInt(config.getProperty("thread-pool-size", "10"));
+    remoteDnsServer = config.getProperty("remote-dns-server", "114.114.114.114");
+    log.addLog("config loaded");
+} catch (IOException ignored) {
+    log.addLog("config load failed, use default settings");
+}
+```
+
+The default configuration is listed in `boot.properties` file.
+
+```properties
+use-cache=true
+cache-limit-in-days=2
+thread-pool-size=10
+remote-dns-server=114.114.114.114
+```
+
 ## 4. Testing & Results
+
+
 
 ## 5. Summary & Future Improvement
 
