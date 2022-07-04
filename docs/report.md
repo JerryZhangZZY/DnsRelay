@@ -91,7 +91,7 @@ Client first sends an capsulate UDP datagram request to the resolver. The resolv
 
 #### 2.1.3. DNS Datagram
 
-We import a maven dependency [DNSJava](https://mvnrepository.com/artifact/dnsjava/dnsjava) to extract information from DNS datagram conveniently. But we must first have a good understanding about each section of the datagram.
+We have to implement a parser to resolve the DNS datagrams received as well as encapsulate the answers into datagrams for sending. But before that, we must first have a good understanding about each section of the datagram.
 
 ##### 2.1.3.1. DNS Header
 
@@ -136,7 +136,7 @@ The header section of DNS datagram is shown in *Figure 3*. ID is randomly genera
 
 ##### 2.1.3.3. DNS Answer
 
-We only need to fill the **RDLENGTH** and **RDATA** in the response packet while the rest of the sections only need to be simply cloned. The the DNS relay implementation, only **ARecord**s and **AAAARecord**s need to be attached. This can be achieved by simply call `addRecord()` function defined in DNSJava.
+We only need to fill the **RDLENGTH** and **RDATA** in the response packet while the rest of the sections only need to be simply cloned. For the DNS relay implementation, only **ARecord**s and **AAAARecord**s need to be attached. This should be achieved by simply call the `addRecord()` function in our parser.
 
 ```
   0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
