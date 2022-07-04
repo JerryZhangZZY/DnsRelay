@@ -641,7 +641,7 @@ st-->1-->|true|2-->3-->|true|nd
 
 ### 3.3 Cache Cleaning Module
 
-The mapping of domains and addresses are subject to change, so the cache must be regularly flushed and updated to keep track with authority records from remote DNS server. This is implemented by using a task scheduler that triggers the cache cleaning task every day to delete cache records before two days.
+The mapping of domains and addresses are subject to change, so the cache must be regularly flushed and updated to keep track with authority records from remote DNS server. This is implemented by using a task scheduler that triggers the cache cleaning task every day to delete cache records before two days(customizable).
 
 ```java
 ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
@@ -656,7 +656,7 @@ The project enables several settings, including `use-cache`, `cache-limit-in-day
 
 Users can decide if they want to use local caching or always query the remote DNS server, and decide how long the cache records are saved in the cache file. They can use larger thread pool size to support more traffic, or use a smaller one to reduce memory and CPU burden. And users can decide the address of the remote DNS server used by the resolver. For example, for users at BUPT campus, they can set the address as `10.3.9.44` to use DNS server provided by BUPT. 
 
-This configuration module is supported by Java `Properties` class, and the implementation is as following.
+This configuration module is supported by Java `Properties` interface, and the implementation is as following.
 
 ```java
 Properties config = new Properties();
@@ -687,33 +687,33 @@ remote-dns-server=114.114.114.114
 
 ### 4.1 Using `nslookup`
 
-First of all, execute the DNS relay program. Then enter `nslookup example.com 127.0.0.1` in  `cmd`. Some examples are listed below.
+First of all, execute the DNS relay program. Then enter `nslookup example.com 127.0.0.1` in the terminal. Some examples are listed below.
 
-- Querying `www.google.com`, which support both IPv4 and IPv6:
+- Querying [www.google.com](www.google.com), which support both **IPv4** and **IPv6**:
 
 ![](report images/7.png)
 
 <center><b><font size ='2'>Figure 18. nslookup - 1</font></b></center>
 
-- Querying `byt.pt`, a pure IPv6 website:
+- Querying [byr.pt](byr.pt), a pure **IPv6** website:
 
 ![](report images/8.png)
 
 <center><b><font size ='2'>Figure 19. nslookup - 2</font></b></center>
 
-- Querying a non-exist domain, whose address should not be found:
+- Querying a **nonexistent** domain, whose address should not be found:
 
 ![](report images/9.png)
 
 <center><b><font size ='2'>Figure 20. nslookup - 3</font></b></center>
 
-- The relay program support all kinds of question type, say type MX:
+- The relay program support all kinds of question type, say type **MX**:
 
 ![](report images/10.png)
 
 <center><b><font size ='2'>Figure 21. nslookup - 4</font></b></center>
 
-Domains in the blacklist are disabled. For example, we can set Google as `0.0.0.0` and `::`, and try to query it.
+- Domains in the **blacklist** are disabled. For example, we can set Google as `0.0.0.0` and `::`, and try to query it.
 
 ![](report images/11.png)
 
@@ -727,13 +727,12 @@ Domains in the blacklist are disabled. For example, we can set Google as `0.0.0.
 
 To use this DNS relay with browser, users need to configure their network settings.
 
-![](report images/13.png)
+<center>
+	<img src="report images/13.png" style="zoom: 50%;" />
+	<img src="report images/14.png" style="zoom:50%;" />
+</center>
 
-<center><b><font size ='2'>Figure 24. Network Config - 1</font></b></center>
-
-![](report images/14.png)
-
-<center><b><font size ='2'>Figure 25. Network Config - 2</font></b></center>
+<center><b><font size ='2'>Figure 24 & 25. Network Config</font></b></center>
 
 And then start the relay program and surf the Internet with browser. The operations of this DNS relay can be seen in the log file.
 
@@ -741,22 +740,22 @@ And then start the relay program and surf the Internet with browser. The operati
 
 <center><b><font size ='2'>Figure 26. Broswer</font></b></center>
 
-Using a web browser is quite different from simply using `nslookup` to test the DNS relay program, because webpages are complicated and often send a large number of "strange" request, just like the "passport.bigfun.cn" in the figure above. This is in essence challenging but our DNS relay can handle it very well.
+Using a web browser is quite different from simply using `nslookup` to test the DNS relay program, because webpages are **complicated** and often send a large number of "strange" request, just like the "passport.bigfun.cn" in the figure above. This is in essence challenging but our DNS relay can handle it very well.
 
 ### 4.3 Using Wireshark
 
-Capturing message on port 53, we can see the packet format and content is completely same with or without our DNS relay. This means our program is highly transparent.
+Capturing message on port 53, we can see the packet format and content is completely same with or without our DNS relay. This means our program is highly **transparent** to the client.
 
 ## 5. Summary & Future Improvement
 
 ### 5.1. Summary
 
-The DNS relay program is capable of handling various DNS query requests. On entering `nslookup example.com localhost` in `cmd`, the relay program receives the question from resolver and return with a answer from its local cache or remote DNS server. Apart from IPv4, the program has support for **IPv6** DNS query by returning type AAAA record, and it can also deal with records of other types including **NS, CNAME, and MX**. By using **a thread pool**, the server is able to handle multiple request at the same time. This **concurrency** configuration greatly helps improve the performance of the program. Mutex Lock is used to ensure **thread-safe** and avoid race condition.  In order to easy to burden or remote DNS server and speed up DNS look-up, the program uses a **cache** to store DNS query result for a preconfigured period of time and expired DNS cache is **automatically flushed**. The cache is supported by a **hash map** in the memory, which means any query in the cache can be done with time complexity of $O(1)$, and thus other threads is very unlikely to be blocked when they access the cache. This program also enables **load balancing**. If multiple IP addresses are found in cache or received from remote server (which means the Internet service has many servers for load balancing), it will randomly select one to send back to resolver. In this way, user programs access the service via different IP addresses and servers fairly. **Log** functions is used to record the connection and operations of the relay program. Users can track all query and response records in the log file.
+The DNS relay program is capable of handling various DNS query requests. On entering `nslookup example.com 127.0.0.1` in the terminal, the relay program receives the question from resolver and return with a answer from its local cache or remote DNS server. Apart from IPv4, the program has support for **IPv6** DNS query by returning type AAAA record, and it can also deal with records of other types including **NS, CNAME, and MX**. By using **a thread pool**, the server is able to handle multiple request at the same time. This **concurrency** configuration greatly helps improve the performance of the program. Mutex Lock is used to ensure **thread-safe** and avoid race condition.  In order to easy to burden or remote DNS server and speed up DNS look-up, the program uses a **cache** to store DNS query result for a preconfigured period of time and expired DNS cache is **automatically flushed**. The cache is supported by a **hash map** in the memory, which means any query in the cache can be done with time complexity of $O(1)$, and thus other threads is very unlikely to be blocked when they access the cache. This program also enables **load balancing**. If multiple IP addresses are found in cache or received from remote server (which means the Internet service has many servers for load balancing), it will randomly select one to send back to resolver. In this way, user programs access the service via different IP addresses and servers fairly. **Log** functions is used to record the connection and operations of the relay program. Users can track all query and response records in the log file.
 
 ### 5.2. Room for Improvements
 
 - Blacklist can be separate from cache so that it can be maintained more conveniently
 - Log can be clearable in case the file is very large
 - Cache size limit can be used to restrain memory usage
-- Request receiving can use `BlockingQueue` Interface to deal with enormous traffic (, which is unlikely to happen on localhost but would be useful is deployed as a public remote DNS server). 
+- Request receiving can use `BlockingQueue` Interface to deal with enormous traffic (, which is unlikely to happen on localhost but would be useful if deployed as a public remote DNS server). 
 
