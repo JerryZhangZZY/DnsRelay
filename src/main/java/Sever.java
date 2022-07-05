@@ -76,13 +76,14 @@ public class Sever {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        log.addLog("server started");
+        log.addLog("server started\n");
         while (true) {
             try {
                 socket.receive(request);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            log.addLog("\33[33;1m" + "[" + Thread.currentThread().getName() + "] " + "datagram received, assign to a handler" + "\33[0m");
             pool.execute(new Handler(request, socket, cache, new Log(), remoteDnsServer, useCache));
         }
     }
@@ -108,6 +109,8 @@ public class Sever {
 
         @Override
         public void run() {
+            final String logPrefix = "[" + Thread.currentThread().getName() + "] ";
+
             InetAddress srcIp = request.getAddress();
             int srcPort = request.getPort();
             Message messageIn;
@@ -116,29 +119,43 @@ public class Sever {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+
+            // print datagram assigned by main
+            log.addLog(logPrefix
+                    + "request received: \n"
+                    + "\33[36;3m"
+                    + "---------------------------------------------------------\n"
+                    + messageIn
+                    + "\n---------------------------------------------------------"
+                    + "\33[0m");
+
             Record question = messageIn.getQuestion();
             String domain = question.getName().toString();
-            boolean valid = true, useV6 = false, nop = false;
+
+            // cut ending "." and add style
+            String domainCut = "\33[34;4m" + domain.substring(0, domain.length()-1) + "\33[0m";
+
+            boolean useV6 = false, nop = false;
 
             int type = question.getType();
             switch (type) {
                 // inverse dns
                 case 12 -> {
                     nop = true;
-                    log.addLog("[" + Thread.currentThread().getName() + "] " + "inverse dns, simple relay");
+                    log.addLog(logPrefix + "inverse dns(PTR) for: " + domainCut + ", simple relay");
                 }
                 // ipv4 question
                 case 1 -> {
-                    log.addLog("[" + Thread.currentThread().getName() + "] " + "ipv4 question for domain: " + domain);
+                    log.addLog(logPrefix + "ipv4 question(A) for domain: " + domainCut);
                 }
                 // ipv6 question
                 case 28 -> {
                     useV6 = true;
-                    log.addLog("[" + Thread.currentThread().getName() + "] " + "ipv6 question for domain: " + domain);
+                    log.addLog(logPrefix + "ipv6 question(AAAA) for domain: " + domainCut);
                 }
                 default -> {
                     nop = true;
-                    log.addLog("[" + Thread.currentThread().getName() + "] " + "other type, simple relay");
+                    log.addLog(logPrefix + "other type, simple relay");
                 }
             }
 
@@ -148,10 +165,10 @@ public class Sever {
             if (useCache)
                 ansIp = cache.getIpFromCache(domain + (useV6 ? "-v6" : ""));
             if (!nop && (ansIp != null)) {
-                log.addLog("[" + Thread.currentThread().getName() + "] " + "found in cache");
+                log.addLog(logPrefix + cache.getIpNumFromCache(domain + (useV6 ? "-v6" : "")) + " result(s) found in cache");
             } else {
                 if (!nop && useCache)
-                    log.addLog("[" + Thread.currentThread().getName() + "] " + "not in cache");
+                    log.addLog(logPrefix + "not in cache, relay to remote");
                 DatagramSocket relaySocket;
                 try {
                     relaySocket = new DatagramSocket();
@@ -186,6 +203,14 @@ public class Sever {
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
+                    // print datagram received from remote
+                    log.addLog(logPrefix
+                            + "received from remote: \n"
+                            + "\33[34;3m"
+                            + "---------------------------------------------------------\n"
+                            + messageResponse
+                            + "\n---------------------------------------------------------"
+                            + "\33[0m");
                     List<Record> records = messageResponse.getSection(Section.ANSWER);
                     ArrayList<InetAddress> ips = new ArrayList<>();
                     for (Record record : records) {
@@ -210,14 +235,13 @@ public class Sever {
                         }
                     }
                     if (ips.size() == 0) {
-                        log.addLog("[" + Thread.currentThread().getName() + "] " + "no ipv" + (useV6 ? 6 : 4) + " result found from remote dns");
-                        valid = false;
+                        log.addLog(logPrefix + "no ipv" + (useV6 ? 6 : 4) + " result found");
                     } else {
-                        log.addLog("[" + Thread.currentThread().getName() + "] " + "in total " + ips.size() + " result(s)");
+                        log.addLog(logPrefix + "in total " + ips.size() + " result(s)");
                         ansIp = ips.get(new Random().nextInt(ips.size()));
                         if (useCache) {
-                            boolean finalUseV6 = useV6;
                             String parentName = Thread.currentThread().getName();
+                            boolean finalUseV6 = useV6;
                             Thread update = new Thread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -237,11 +261,13 @@ public class Sever {
             }
             if (!nop) {
                 Message messageOut = messageIn.clone();
-                if (!valid || ansIp.toString().substring(1).equals("0.0.0.0")
+                if (ansIp == null) {
+                    log.addLog(logPrefix + "no answer added");
+                } else if (ansIp.toString().substring(1).equals("0.0.0.0")
                         || ansIp.toString().substring(1).equals("::")
                         || ansIp.toString().substring(1).equals("0:0:0:0:0:0:0:0")) {
                     messageOut.getHeader().setRcode(3);
-                    log.addLog("[" + Thread.currentThread().getName() + "] " + "answer: non-existent domain");
+                    log.addLog(logPrefix + "domain in " + "\33[41;1m" + "blacklist" +  "\33[0m" + ", block by setting RCODE=3");
                 } else {
                     Record answer;
                     // ipv4 answer
@@ -251,7 +277,7 @@ public class Sever {
                     else
                         answer = new AAAARecord(question.getName(), question.getDClass(), 64, ansIp);
                     messageOut.addRecord(answer, Section.ANSWER);
-                    log.addLog("[" + Thread.currentThread().getName() + "] " + "answer ip: " + ansIp.toString().substring(1));
+                    log.addLog(logPrefix + "answer ip: " + ansIp.toString().substring(1));
                 }
                 byte[] buf = messageOut.toWire();
                 response = new DatagramPacket(buf, buf.length);
@@ -263,6 +289,20 @@ public class Sever {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+
+            // print response datagram
+            try {
+                log.addLog(logPrefix
+                        + "response sent: \n"
+                        + "\33[32;3m"
+                        + "---------------------------------------------------------\n"
+                        + new Message(response.getData())
+                        + "\n---------------------------------------------------------"
+                        + "\33[0m");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
             log.writeLog();
         }
     }

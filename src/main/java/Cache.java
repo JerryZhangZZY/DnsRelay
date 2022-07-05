@@ -23,7 +23,7 @@ public class Cache {
         }
     }
 
-    public InetAddress getIpFromCache(String domain){
+    public InetAddress getIpFromCache(String domain) {
         synchronized (cacheLock) {
             if (cache.containsKey(domain)) {
                 try {
@@ -34,6 +34,12 @@ public class Cache {
             }
         }
         return null;
+    }
+
+    public int getIpNumFromCache(String domain) {
+        synchronized (cacheLock) {
+            return cache.get(domain).length;
+        }
     }
 
     public void readCacheFromFile() {
