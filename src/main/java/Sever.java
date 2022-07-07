@@ -118,7 +118,7 @@ public class Sever {
             }
             MyRecord question = messageIn.getQuestion();
             String domain = question.getName().toString();
-            boolean valid = true, useV6 = false, nop = false;
+            boolean useV6 = false, nop = false;
 
             int type = question.getType();
             switch (type) {
@@ -211,7 +211,6 @@ public class Sever {
                     }
                     if (ips.size() == 0) {
                         log.addLog("[" + Thread.currentThread().getName() + "] " + "no ipv" + (useV6 ? 6 : 4) + " result found from remote dns");
-                        valid = false;
                     } else {
                         log.addLog("[" + Thread.currentThread().getName() + "] " + "in total " + ips.size() + " result(s)");
                         ansIp = ips.get(new Random().nextInt(ips.size()));
@@ -237,11 +236,13 @@ public class Sever {
             }
             if (!nop) {
                 MyMessage messageOut = messageIn.clone();
-                if (!valid || ansIp.toString().substring(1).equals("0.0.0.0")
+                if (ansIp == null) {
+                    log.addLog("[" + Thread.currentThread().getName() + "] " + "no answer added");
+                } else if (ansIp.toString().substring(1).equals("0.0.0.0")
                         || ansIp.toString().substring(1).equals("::")
                         || ansIp.toString().substring(1).equals("0:0:0:0:0:0:0:0")) {
                     messageOut.getHeader().setRcode(3);
-                    log.addLog("[" + Thread.currentThread().getName() + "] " + "answer: non-existent domain");
+                    log.addLog("[" + Thread.currentThread().getName() + "] " + "domain in blacklist");
                 } else {
                     MyRecord answer;
                     // ipv4 answer
