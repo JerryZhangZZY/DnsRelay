@@ -8,7 +8,7 @@ import java.util.*;
 public class Cache {
     private final String path = "cache.txt";
     private final File cacheFile;
-    private final Map<String, String[]> cache;
+    private final HashMap<String, String[]> cache;
     private final Object cacheLock = new Object();
 
     public Cache() {
