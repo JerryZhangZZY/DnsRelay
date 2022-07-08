@@ -1,5 +1,10 @@
 package myparser;
 
+import org.xbill.DNS.DClass;
+import org.xbill.DNS.OPTRecord;
+import org.xbill.DNS.Opcode;
+import org.xbill.DNS.Section;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -102,5 +107,37 @@ public class MyMessage implements Cloneable {
         }
         m.header = header.clone();
         return m;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 4; i++) {
+            if (header.getOpcode() != Opcode.UPDATE) {
+                sb.append(";; ").append(Section.longString(i)).append(":\n");
+            } else {
+                sb.append(";; ").append(Section.updString(i)).append(":\n");
+            }
+            sectionToString(sb, i);
+            sb.append("\n");
+        }
+        sb.append(";; Message size: ").append(size).append(" bytes");
+        return sb.toString();
+    }
+
+    private void sectionToString(StringBuilder sb, int i) {
+        if (i > 3) {
+            return;
+        }
+        for (MyRecord rec : getSection(i)) {
+            if (i == Section.QUESTION) {
+                sb.append(";;\t").append(rec.name);
+                sb.append(", type = ").append(MyType.string(rec.type));
+                sb.append(", class = IN");
+            } else {
+                sb.append(rec);
+            }
+            sb.append("\n");
+        }
     }
 }
