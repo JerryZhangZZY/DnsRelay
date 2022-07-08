@@ -145,7 +145,7 @@ public class Sever {
             InetAddress ansIp = null;
             DatagramPacket response = null;
 
-            if (useCache)
+            if (!nop && useCache)
                 ansIp = cache.getIpFromCache(domain + (useV6 ? "-v6" : ""));
             if (!nop && (ansIp != null)) {
                 log.addLog("[" + Thread.currentThread().getName() + "] " + "found in cache");
